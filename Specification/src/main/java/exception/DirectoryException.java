@@ -1,11 +1,11 @@
 package exception;
 
-import exception.storageConfigurationException.StorageConfigurationException;
+import java.io.IOException;
 
-public class DirectoryException extends StorageConfigurationException{
+@SuppressWarnings("serial")
+public class DirectoryException extends IOException {
 
 	public DirectoryException(String msg) {
 		super(msg);
 	}
-
 }

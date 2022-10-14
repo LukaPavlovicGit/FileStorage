@@ -3,6 +3,8 @@ package fileMetadata;
 import java.util.Date;
 
 public class FileMetadata {
+	
+	private String fileID;
 	private String name;
 	private String extension;
 	private String srcDir;
@@ -21,7 +23,7 @@ public class FileMetadata {
 	}
 	
 	public FileMetadata(FileMetadataBuilder builder) {
-		
+		this.fileID = builder.fileID;
 		this.name = builder.name;
 		this.extension = builder.extension;
 		this.srcDir = builder.srcDir;
@@ -35,6 +37,16 @@ public class FileMetadata {
 		this.depthInTreeStructure = builder.depthInTreeStructure;
 	}
 	
+	
+	
+	public String getFileID() {
+		return fileID;
+	}
+
+	public void setFileID(String fileID) {
+		this.fileID = fileID;
+	}
+
 	public String getName() {
 		return name;
 	}
@@ -114,10 +126,28 @@ public class FileMetadata {
 		this.depthInTreeStructure = depthInTreeStructure;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+            return false;
+        }
+
+        if (obj.getClass() != this.getClass()) {
+            return false;
+        }
+        
+        final FileMetadata other = (FileMetadata) obj;
+        if(this.name.endsWith(other.name) && this.srcDir.equals(other.srcDir))
+        	return true;
+		
+		return false;
+	}
+	
 	
 	// Builder
 	public static class FileMetadataBuilder{
 		
+		private String fileID;
 		private String name;
 		private String extension;
 		private String srcDir;
@@ -129,6 +159,11 @@ public class FileMetadata {
 		private boolean isStorage;
 		private boolean isConfigFile;
 		private Integer depthInTreeStructure;
+		
+		public FileMetadataBuilder withFileID(String ID) {
+			this.fileID = ID;
+			return this;
+		}
 		
 		public FileMetadataBuilder withName(String name) {
 			this.name = name;

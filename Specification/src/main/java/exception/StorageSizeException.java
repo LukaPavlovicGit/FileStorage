@@ -8,5 +8,4 @@ public class StorageSizeException extends IOException {
 	public StorageSizeException(String msg) {
 		super(msg);
 	}
-
 }
