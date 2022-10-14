@@ -1,5 +1,4 @@
 package specification;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Date;
 import java.util.HashMap;
@@ -17,7 +16,7 @@ import storageInformation.StorageInformation;
 public abstract class Storage {
 	/* Skladiste je predstavljeno kao stablo. U svakom nivou stabla imamo foldere i fajlove sa jedinstvenim nazivima,
 	 ukoliko je u pitanju folder onda ce imati listu foldera i fajlova koje sadrzi, u suprotnom lista ce biti null; */ 
-	protected Map<Integer, Map<String, List<FileMetadata>>> StorageTreeRepresentation = new HashMap<Integer, Map<String, List<FileMetadata>>>();
+	protected Map<Integer, Map<String, List<FileMetadata>>> StorageTreeStructure = new HashMap<Integer, Map<String, List<FileMetadata>>>();
 	protected StorageConfiguration storageConfiguration = new StorageConfiguration();
 	protected StorageInformation storageInformation = new StorageInformation();
 	
