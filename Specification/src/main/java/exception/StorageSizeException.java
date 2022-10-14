@@ -1,8 +1,9 @@
 package exception;
 
-import exception.storageConfigurationException.StorageConfigurationException;
+import java.io.IOException;
 
-public class StorageSizeException extends StorageConfigurationException{
+@SuppressWarnings("serial")
+public class StorageSizeException extends IOException {
 
 	public StorageSizeException(String msg) {
 		super(msg);

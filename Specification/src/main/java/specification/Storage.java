@@ -1,57 +1,66 @@
 package specification;
-import java.io.FileNotFoundException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import configuration.StorageConfiguration;
 import exception.DirectoryException;
+import exception.NamingPolicyException;
+import exception.NotFound;
 import exception.StorageSizeException;
 import exception.UnsupportedFileException;
-import exception.storageConfigurationException.StorageConfigurationException;
 import fileMetadata.FileMetadata;
-import storageInformation.StorageInformation;
 
 public abstract class Storage {
-	/* Skladiste je predstavljeno kao stablo. U svakom nivou stabla imamo foldere i fajlove sa jedinstvenim nazivima,
-	 ukoliko je u pitanju folder onda ce imati listu foldera i fajlova koje sadrzi, u suprotnom lista ce biti null; */ 
-	protected Map<Integer, Map<String, List<FileMetadata>>> StorageTreeStructure = new HashMap<Integer, Map<String, List<FileMetadata>>>();
-	protected StorageConfiguration storageConfiguration = new StorageConfiguration();
-	protected StorageInformation storageInformation = new StorageInformation();
 	
-
 	public abstract void createStorage(String dest, StorageConfiguration storageConfiguration);
 	
-	public abstract boolean createDirectory(String dest, String name, Integer... filesLimit) throws StorageSizeException, DirectoryException;
+	public abstract boolean createDirectory(String dest, String name, Integer... filesLimit) throws StorageSizeException, NamingPolicyException, DirectoryException;
 	
-	public void createDirectories(String dest, Map<String, Integer> dirNameAndFilesLimit) throws StorageConfigurationException {
-		for(String name : dirNameAndFilesLimit.keySet()) {
+	public void createDirectories(String dest, Map<String, Integer> dirNameAndFilesLimit) {
+		try {
 			
-			Integer filesLimit = dirNameAndFilesLimit.get(name);
+			for(String name : dirNameAndFilesLimit.keySet()) {
+				Integer filesLimit = dirNameAndFilesLimit.get(name);
+				createDirectory(dest, name, filesLimit);		
+			}
 			
-			if(!createDirectory(dest, name, filesLimit))
-				throw new StorageConfigurationException("Storage Configuration Exception!");		
+		} catch (StorageSizeException | DirectoryException | NamingPolicyException e) {
+			e.printStackTrace();
 		}
 	}
 	
-	public abstract boolean createFile(String dest, String name) throws UnsupportedFileException;
+	public abstract boolean createFile(String dest, String name) throws StorageSizeException, NamingPolicyException, UnsupportedFileException;
 	
-	public void createFiles(String dest, List<String> names) throws UnsupportedFileException{
-		for(String name : names) {
-			
-			if(!createFile(dest, name))
-				throw new UnsupportedFileException("Unsupported File Exception!");
+	public void createFiles(String dest, List<String> names) {
+		try {
+		
+			for(String name : names) {
+				createFile(dest, name);
+			}
+		
+		} catch (StorageSizeException | NamingPolicyException | UnsupportedFileException e) {	
+			e.printStackTrace();
 		}
+		
 	}
 	
-	public abstract void move(String name, String src, String newDest);
+	public abstract void move(String name, String src, String newDest) throws NotFound;
 	
-	public abstract void delete(String name, String src);
+	public abstract void delete(String name, String src) throws NotFound;
 	
-	public abstract void download(String name, String src, String dest);
+	public abstract void download(String name, String src, String dest) throws NotFound;
 	
-	public abstract void rename(String newName, String name, String src);
+	public abstract void rename(String newName, String name, String src) throws NotFound, NamingPolicyException;
+	
+	public abstract void saveConfigurationFile(String name);
+	
+	public abstract void readConfigurationFile(String name);
+	
+	public void changeDirectory(String path) throws NotFound {
+		
+	}
+	
 	
 	public List<FileMetadata> listDirectory(String src, 
 											boolean onlyDirs, 
@@ -60,7 +69,7 @@ public abstract class Storage {
 											String extension,
 											String prefix,
 											String sufix,
-											String subWord) throws FileNotFoundException {
+											String subWord) throws NotFound {
 		
 		return null;
 	}
@@ -75,7 +84,7 @@ public abstract class Storage {
 		return null;
 	}
 	
-	public List<String> findLocation(String name){
+	public List<String> findLocation(String name) throws NotFound {
 		
 		return null;
 	}
@@ -85,7 +94,7 @@ public abstract class Storage {
 										 boolean byCreationDate,
 										 boolean byModificationDate,
 										 Date startPeriod,
-										 Date endPeriod ){
+										 Date endPeriod) {
 		
 		return null;
 	}
@@ -95,7 +104,7 @@ public abstract class Storage {
 										   boolean includeAbsolutePath,
 										   boolean invludeSize, 
 										   boolean includeCreatinDate,
-										   boolean includeModificationDate ){
+										   boolean includeModificationDate) {
 		
 		return null;
 	}

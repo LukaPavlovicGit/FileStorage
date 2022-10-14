@@ -1,8 +1,7 @@
 package exception;
 
-import java.io.IOException;
-
-public class UnsupportedFileException extends IOException{
+@SuppressWarnings("serial")
+public class UnsupportedFileException extends Exception {
 
 	public UnsupportedFileException(String msg) {
 		super(msg);

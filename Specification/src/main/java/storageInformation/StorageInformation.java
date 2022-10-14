@@ -7,7 +7,7 @@ public class StorageInformation {
 	public static final String configFileName = File.separator + "configuration.json";
 	private String currentPath = "";
 	private String storageAbsolutePath = "";
-	private Integer currentTreeDepth;
+	private Integer currentTreeDepth = 0;
 	
 	
 	public String getCurrentPath() {
