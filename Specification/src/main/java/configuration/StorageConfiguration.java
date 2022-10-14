@@ -1,13 +1,15 @@
 package configuration;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 public class StorageConfiguration {
 	
 	private Long storageSize;
-	private Set<String> unsupportedFiles;
-	private Map<String, Integer> dirNumberOfFilesLimit;
+	private Set<String> unsupportedFiles = new HashSet<>();
+	private Map<String, Integer> dirNumberOfFilesLimit = new HashMap<>();
 	
 	
 	public StorageConfiguration() {
