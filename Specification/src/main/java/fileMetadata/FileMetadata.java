@@ -1,6 +1,10 @@
 package fileMetadata;
 
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 public class FileMetadata {
 	
@@ -17,8 +21,15 @@ public class FileMetadata {
 	private boolean isConfigFile;
 	private Integer depthInTreeStructure;
 	
+	//if directory
+	private Integer numOfFilesLimit;
 	
-	public FileMetadata() {
+	// if storage
+	private Long storageSize;
+	private Set<String> unsupportedFiles = new HashSet<>();
+	
+	
+	private FileMetadata() {
 		
 	}
 	
@@ -27,14 +38,19 @@ public class FileMetadata {
 		this.name = builder.name;
 		this.extension = builder.extension;
 		this.srcDir = builder.srcDir;
-		this.timeCreated = builder.timeCreated;
-		this.timeModified = builder.timeModified;
+		this.timeCreated = new Date(System.currentTimeMillis());;
+		this.timeModified =new Date(System.currentTimeMillis());;
 		this.absolutePath = builder.absolutePath;
 		this.isFile = builder.isFile;
 		this.isDirectory = builder.isDirectory;
 		this.isStorage = builder.isStorage;
 		this.isConfigFile = builder.isConfigFile;
 		this.depthInTreeStructure = builder.depthInTreeStructure;
+		
+		this.numOfFilesLimit = builder.numOfFilesLimit;
+		
+		this.storageSize = builder.storageSize;
+		this.unsupportedFiles = builder.unsupportedFiles;
 	}
 	
 	
@@ -126,6 +142,12 @@ public class FileMetadata {
 		this.depthInTreeStructure = depthInTreeStructure;
 	}
 	
+	public FileMetadata clone() {
+		FileMetadata file = new FileMetadata();
+		
+		return file;
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) {
@@ -144,6 +166,40 @@ public class FileMetadata {
 	}
 	
 	
+
+
+	@Override
+	public String toString() {
+		final int maxLen = 18;
+		return "FileMetadata [" + (fileID != null ? "fileID=" + fileID + ", " : "")
+				+ (name != null ? "name=" + name + ", " : "")
+				+ (extension != null ? "extension=" + extension + ", " : "")
+				+ (srcDir != null ? "srcDir=" + srcDir + ", " : "")
+				+ (absolutePath != null ? "absolutePath=" + absolutePath + ", " : "")
+				+ (timeCreated != null ? "timeCreated=" + timeCreated + ", " : "")
+				+ (timeModified != null ? "timeModified=" + timeModified + ", " : "") + "isFile=" + isFile
+				+ ", isDirectory=" + isDirectory + ", isStorage=" + isStorage + ", isConfigFile=" + isConfigFile + ", "
+				+ (depthInTreeStructure != null ? "depthInTreeStructure=" + depthInTreeStructure + ", " : "")
+				+ (numOfFilesLimit != null ? "numOfFilesLimit=" + numOfFilesLimit + ", " : "")
+				+ (storageSize != null ? "storageSize=" + storageSize + ", " : "")
+				+ (unsupportedFiles != null ? "unsupportedFiles=" + toString(unsupportedFiles, maxLen) : "") + "]";
+	}
+
+	private String toString(Collection<?> collection, int maxLen) {
+		StringBuilder builder = new StringBuilder();
+		builder.append("[");
+		int i = 0;
+		for (Iterator<?> iterator = collection.iterator(); iterator.hasNext() && i < maxLen; i++) {
+			if (i > 0)
+				builder.append(", ");
+			builder.append(iterator.next());
+		}
+		builder.append("]");
+		return builder.toString();
+	}
+
+
+
 	// Builder
 	public static class FileMetadataBuilder{
 		
@@ -152,13 +208,20 @@ public class FileMetadata {
 		private String extension;
 		private String srcDir;
 		private String absolutePath;
-		private Date timeCreated;
-		private Date timeModified;
+		//private Date timeCreated;
+		//private Date timeModified;
 		private boolean isFile;
 		private boolean isDirectory;
 		private boolean isStorage;
 		private boolean isConfigFile;
 		private Integer depthInTreeStructure;
+		
+		//if directory
+		private Integer numOfFilesLimit;
+		
+		// if storage
+		private Long storageSize;
+		private Set<String> unsupportedFiles = new HashSet<>();
 		
 		public FileMetadataBuilder withFileID(String ID) {
 			this.fileID = ID;
@@ -177,14 +240,14 @@ public class FileMetadata {
 			this.srcDir = srcDir;
 			return this;
 		}
-		public FileMetadataBuilder withTimeCreated(Date timeCreated) {
+		/*public FileMetadataBuilder withTimeCreated(Date timeCreated) {
 			this.timeCreated = timeCreated;
 			return this;
 		}
 		public FileMetadataBuilder withTimeModified(Date timeModified) {
 			this.timeModified = timeModified;
 			return this;
-		}
+		}*/
 		public FileMetadataBuilder withAbsolutePath(String absolutePath) {
 			this.absolutePath = absolutePath;
 			return this;
@@ -209,6 +272,19 @@ public class FileMetadata {
 			this.depthInTreeStructure = depthInTreeStrucure;
 			return this;
 		}
+		public FileMetadataBuilder withNumOfFilesLimit(Integer num) {
+			this.numOfFilesLimit = num;
+			return this;
+		}
+		public FileMetadataBuilder withUnsupportedFiles(Set<String> unsupportedFiles) {
+			this.unsupportedFiles = unsupportedFiles;
+			return this;
+		}
+		public FileMetadataBuilder withStorageSize(Long size) {
+			this.storageSize = size;
+			return this;
+		}
+		
 		public FileMetadata build() {
 			return new FileMetadata(this);
 		}

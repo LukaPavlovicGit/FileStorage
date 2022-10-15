@@ -9,7 +9,8 @@ import fileMetadata.FileMetadata;
 
 public class StorageInformation {
 	public static final String datarootDirName = "dataRootDirectory";
-	public static final String configFileName = "configuration.json";
+	public static final String configJSONFileName = "configuration.json";
+	public static final String StrorageTreeStructureJSONFileName = "storageTreeStructure.json";
 	private Map<Integer, List<FileMetadata>> StorageTreeStructure = new HashMap<Integer, List<FileMetadata>>();
 	private Integer currentTreeDepth = 0;
 	private String currentDirName = "";
