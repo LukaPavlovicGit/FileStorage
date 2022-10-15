@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import configuration.StorageConfiguration;
 import exception.DirectoryException;
+import exception.InvalidArgumentsExcpetion;
 import exception.NamingPolicyException;
 import exception.NotFound;
 import exception.StorageSizeException;
@@ -58,11 +59,11 @@ public abstract class Storage {
 	
 	public abstract void move(String name, String src, String newDest) throws NotFound;
 	
-	public abstract void delete(String name, String src) throws NotFound;
-	
-	public abstract void download(String name, String src, String dest) throws NotFound;
+	public abstract void remove(String name, String src) throws NotFound;
 	
 	public abstract void rename(String newName, String name, String src) throws NotFound, NamingPolicyException;
+	
+	public abstract void download(String name, String src, String dest) throws NotFound;
 	
 	public abstract void saveConfigurationFile(String name);
 	
@@ -167,17 +168,17 @@ public abstract class Storage {
 		
 			for(FileMetadata f : files) {
 				
-				if(onlyDirs==true && f.isDirectory()==false)
+				if(onlyDirs && !f.isDirectory())
 					continue;
-				if(onlyFiles==true && f.isFile()==false)
+				if(onlyFiles && !f.isFile())
 					continue;
-				if(extension!=null && f.getName().endsWith(extension)==false)
+				if(extension != null && !f.getName().endsWith(extension))
 					continue;
-				if(prefix!=null && f.getName().startsWith(prefix)==false)
+				if(prefix != null && !f.getName().startsWith(prefix))
 					continue;
-				if(sufix!=null && f.getName().endsWith(sufix)==false)
+				if(sufix != null && !f.getName().endsWith(sufix))
 					continue;
-				if(subWord!=null && f.getName().contains(subWord)==false)
+				if(subWord != null && !f.getName().contains(subWord))
 					continue;
 				
 				tmp.add(f);
@@ -234,20 +235,44 @@ public abstract class Storage {
 			}
 		}
 		
-		
 		return result;
 	}
 	
-	public List<FileMetadata> resultFilter(List<FileMetadata> result,
+	public Map<Integer,List<FileMetadata>> resultFilter(Map<Integer,List<FileMetadata>> result,
 										   boolean includeName,
 										   boolean includeAbsolutePath,
-										   boolean invludeSize, 
+										   boolean includeSize, 
 										   boolean includeCreatinDate,
 										   boolean includeModificationDate,
 										   Date startPeriod,
-										   Date endPeriod) {
+										   Date endPeriod) throws InvalidArgumentsExcpetion{
+		
+		// napraviti dodatan exception za proveru argumenata, slucaj: endPeritod < startPerodr -> throw new InvalidArgumentsException
+		if(startPeriod != null && endPeriod != null && startPeriod.after(endPeriod))
+			throw new InvalidArgumentsExcpetion("Invalid arguments! startPeroid > endPeriod");
+		
+		/*for(Integer ) {
+			
+		}*/
+		
 		
 		return null;
+	}
+	
+	public void addFileMetadataToStorage(String dst, FileMetadata fileMetadata) {
+		
+	}
+	
+	public void removeFileMetadataFromStorage(String name, String src) {
+		
+	}
+	
+	public void moveFileMetada(String name, String src, String newDest) {
+		
+	}
+	
+	public void renameFileMetadata(String newName, String name, String src) {
+		
 	}
 	
 	
