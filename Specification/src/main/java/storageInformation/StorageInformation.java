@@ -27,8 +27,8 @@ public class StorageInformation {
 	public String getCurrentDirName() {
 		return currentDirName;
 	}
-	public void getCurrentDirName(String getCurrentDirName) {
-		this.currentDirName = getCurrentDirName;
+	public void setCurrentDirName(String dirName) {
+		this.currentDirName = dirName;
 	}
 	public String getStorageAbsolutePath() {
 		return storageAbsolutePath;

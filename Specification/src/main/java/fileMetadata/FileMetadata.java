@@ -11,7 +11,7 @@ public class FileMetadata {
 	private String fileID;
 	private String name;
 	private String extension;
-	private String srcDir;
+	private String parentName;
 	private String absolutePath;
 	private Date timeCreated;
 	private Date timeModified;
@@ -29,7 +29,7 @@ public class FileMetadata {
 	private Set<String> unsupportedFiles = new HashSet<>();
 	
 	
-	private FileMetadata() {
+	public FileMetadata() {
 		
 	}
 	
@@ -37,9 +37,9 @@ public class FileMetadata {
 		this.fileID = builder.fileID;
 		this.name = builder.name;
 		this.extension = builder.extension;
-		this.srcDir = builder.srcDir;
-		this.timeCreated = new Date(System.currentTimeMillis());;
-		this.timeModified =new Date(System.currentTimeMillis());;
+		this.parentName = builder.parentName;
+		this.timeCreated = builder.timeCreated;
+		this.timeModified = builder.timeModified;
 		this.absolutePath = builder.absolutePath;
 		this.isFile = builder.isFile;
 		this.isDirectory = builder.isDirectory;
@@ -75,11 +75,11 @@ public class FileMetadata {
 	public void setExtension(String extension) {
 		this.extension = extension;
 	}
-	public String getSrcDir() {
-		return srcDir;
+	public String getParentName() {
+		return parentName;
 	}
-	public void setSrcDir(String srcDir) {
-		this.srcDir = srcDir;
+	public void setParentName(String parentName) {
+		this.parentName = parentName;
 	}
 	public Date getTimeCreated() {
 		return timeCreated;
@@ -159,7 +159,7 @@ public class FileMetadata {
         }
         
         final FileMetadata other = (FileMetadata) obj;
-        if(this.name.endsWith(other.name) && this.srcDir.equals(other.srcDir))
+        if(this.name.endsWith(other.name) && this.parentName.equals(other.parentName))
         	return true;
 		
 		return false;
@@ -174,7 +174,7 @@ public class FileMetadata {
 		return "FileMetadata [" + (fileID != null ? "fileID=" + fileID + ", " : "")
 				+ (name != null ? "name=" + name + ", " : "")
 				+ (extension != null ? "extension=" + extension + ", " : "")
-				+ (srcDir != null ? "srcDir=" + srcDir + ", " : "")
+				+ (parentName != null ? "srcDir=" + parentName + ", " : "")
 				+ (absolutePath != null ? "absolutePath=" + absolutePath + ", " : "")
 				+ (timeCreated != null ? "timeCreated=" + timeCreated + ", " : "")
 				+ (timeModified != null ? "timeModified=" + timeModified + ", " : "") + "isFile=" + isFile
@@ -206,10 +206,10 @@ public class FileMetadata {
 		private String fileID;
 		private String name;
 		private String extension;
-		private String srcDir;
+		private String parentName;
 		private String absolutePath;
-		//private Date timeCreated;
-		//private Date timeModified;
+		private Date timeCreated;
+		private Date timeModified;
 		private boolean isFile;
 		private boolean isDirectory;
 		private boolean isStorage;
@@ -236,18 +236,18 @@ public class FileMetadata {
 			this.extension = extension;
 			return this;
 		}
-		public FileMetadataBuilder withSrcDir(String srcDir) {
-			this.srcDir = srcDir;
+		public FileMetadataBuilder withParentName(String parentName) {
+			this.parentName = parentName;
 			return this;
 		}
-		/*public FileMetadataBuilder withTimeCreated(Date timeCreated) {
+		public FileMetadataBuilder withTimeCreated(Date timeCreated) {
 			this.timeCreated = timeCreated;
 			return this;
 		}
 		public FileMetadataBuilder withTimeModified(Date timeModified) {
 			this.timeModified = timeModified;
 			return this;
-		}*/
+		}
 		public FileMetadataBuilder withAbsolutePath(String absolutePath) {
 			this.absolutePath = absolutePath;
 			return this;
