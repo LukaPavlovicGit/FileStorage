@@ -364,18 +364,43 @@ public abstract class Storage {
 		return result;
 	}
 	
-	public boolean createStorage(String dest, FileMetadata storage) {
+	public boolean createStorage(String storageDest, 
+								 FileMetadata storage,
+								 FileMetadata dataRoot, 
+								 FileMetadata configJSON,
+								 FileMetadata strorageTreeStructureJSON) {
 		
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<FileMetadata, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();
 		
 		storage.setName(StorageInformation.storageName);
-		storage.setAbsolutePath(dest + File.separator + StorageInformation.storageName);
-		storageTreeStracture.put(storage, new ArrayList<FileMetadata>());
+		storage.setStorage(true);
+		storage.setAbsolutePath(storageDest + File.separator + StorageInformation.storageName);
 		
-		storageInformation.setCurrentDirectory(storage);
+		dataRoot.setName(StorageInformation.datarootDirName);
+		dataRoot.setDataRoot(true);
+		dataRoot.setAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.datarootDirName);
 		
-		// TO BE CONTINUE...
+		configJSON.setName(StorageInformation.configJSONFileName);
+		configJSON.setConfigJSONFile(true);
+		configJSON.setAbsolutePath(storage.getAbsolutePath() + File.separator + configJSON.getName());
+		
+		strorageTreeStructureJSON.setName(StorageInformation.strorageTreeStructureJSONFileName);
+		strorageTreeStructureJSON.setStrorageTreeStructureJSONFile(true);
+		strorageTreeStructureJSON.setAbsolutePath(storage.getAbsolutePath() + File.separator + strorageTreeStructureJSON.getName());
+		
+		List<FileMetadata> storageAdjacent = new ArrayList<FileMetadata>();
+		storageAdjacent.add(dataRoot);
+		storageAdjacent.add(configJSON);
+		storageAdjacent.add(strorageTreeStructureJSON);
+		
+		storageTreeStracture.put(storage, storageAdjacent);
+		
+		storageInformation.setStorageDirectory(storage);
+		storageInformation.setDatarootDirectory(dataRoot);
+		storageInformation.setConfigJSON(configJSON);
+		storageInformation.setStrorageTreeStructureJSON(strorageTreeStructureJSON);
+		storageInformation.setCurrentDirectory(dataRoot);
 		
 		return true;
 	}
@@ -435,9 +460,9 @@ public abstract class Storage {
 		FileMetadata startFromDirectory2 = StorageManager.getInstance().getStorageInformation().getCurrentDirectory(); // za newDest
 		
 		if(filePath.startsWith(storagePathPrefix))
-			startFromDirectory1 = StorageManager.getInstance().getStorageInformation().getStorageDirectory();
+			startFromDirectory1 = StorageManager.getInstance().getStorageInformation().getStorageDirectory(); // za filePath
 		if(newDest.startsWith(storagePathPrefix))
-			startFromDirectory2 = StorageManager.getInstance().getStorageInformation().getStorageDirectory();
+			startFromDirectory2 = StorageManager.getInstance().getStorageInformation().getStorageDirectory(); // za newDest
 		
 		FileMetadata file = getLastDirectoryOnPath(path1.iterator(), startFromDirectory1, storageTreeStracture);
 		FileMetadata dest = getLastDirectoryOnPath(path2.iterator(), startFromDirectory2, storageTreeStracture);

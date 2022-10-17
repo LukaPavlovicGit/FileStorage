@@ -19,7 +19,9 @@ public class FileMetadata {
 	private boolean isFile;
 	private boolean isDirectory;
 	private boolean isStorage;
-	private boolean isConfigFile;
+	private boolean isDataRoot;
+	private boolean isConfigJSONFile;
+	private boolean isStrorageTreeStructureJSONFile;
 	private Integer depthInTreeStructure;
 	
 	//if directory
@@ -46,7 +48,9 @@ public class FileMetadata {
 		this.isFile = builder.isFile;
 		this.isDirectory = builder.isDirectory;
 		this.isStorage = builder.isStorage;
-		this.isConfigFile = builder.isConfigFile;
+		this.isDataRoot = builder.isDataRoot;
+		this.isConfigJSONFile = builder.isConfigJSONFile;
+		this.isStrorageTreeStructureJSONFile = builder.isStrorageTreeStructureJSONFile;
 		this.depthInTreeStructure = builder.depthInTreeStructure;
 		
 		this.numOfFilesLimit = builder.numOfFilesLimit;
@@ -135,13 +139,57 @@ public class FileMetadata {
 	public void setStorage(boolean isStorage) {
 		this.isStorage = isStorage;
 	}
-
-	public boolean isConfigFile() {
-		return isConfigFile;
+	
+	public boolean isDataRoot() {
+		return isDataRoot;
 	}
 
-	public void setConfigFile(boolean isConfigFile) {
-		this.isConfigFile = isConfigFile;
+	public void setDataRoot(boolean isDataRoot) {
+		this.isDataRoot = isDataRoot;
+	}
+
+	public boolean isStrorageTreeStructureJSONFile() {
+		return isStrorageTreeStructureJSONFile;
+	}
+
+	public void setStrorageTreeStructureJSONFile(boolean isStrorageTreeStructureJSONFile) {
+		this.isStrorageTreeStructureJSONFile = isStrorageTreeStructureJSONFile;
+	}
+
+	public Integer getNumOfFilesLimit() {
+		return numOfFilesLimit;
+	}
+
+	public void setNumOfFilesLimit(Integer numOfFilesLimit) {
+		this.numOfFilesLimit = numOfFilesLimit;
+	}
+
+	public Long getStorageSize() {
+		return storageSize;
+	}
+
+	public void setStorageSize(Long storageSize) {
+		this.storageSize = storageSize;
+	}
+
+	public Set<String> getUnsupportedFiles() {
+		return unsupportedFiles;
+	}
+
+	public void setUnsupportedFiles(Set<String> unsupportedFiles) {
+		this.unsupportedFiles = unsupportedFiles;
+	}
+
+	public boolean isConfigJSONFile() {
+		return isConfigJSONFile;
+	}
+
+	public boolean isConfigFile() {
+		return isConfigJSONFile;
+	}
+
+	public void setConfigJSONFile(boolean isConfigJSONFile) {
+		this.isConfigJSONFile = isConfigJSONFile;
 	}
 
 	public Integer getDepthInTreeStructure() {
@@ -162,7 +210,7 @@ public class FileMetadata {
 
 	@Override
 	public String toString() {
-		final int maxLen = 18;
+		final int maxLen = 22;
 		return "FileMetadata [" + (fileID != null ? "fileID=" + fileID + ", " : "")
 				+ (name != null ? "name=" + name + ", " : "")
 				+ (extension != null ? "extension=" + extension + ", " : "")
@@ -171,7 +219,9 @@ public class FileMetadata {
 				+ (parent != null ? "parent=" + parent + ", " : "")
 				+ (timeCreated != null ? "timeCreated=" + timeCreated + ", " : "")
 				+ (timeModified != null ? "timeModified=" + timeModified + ", " : "") + "isFile=" + isFile
-				+ ", isDirectory=" + isDirectory + ", isStorage=" + isStorage + ", isConfigFile=" + isConfigFile + ", "
+				+ ", isDirectory=" + isDirectory + ", isStorage=" + isStorage + ", isDataRoot=" + isDataRoot
+				+ ", isConfigJSONFile=" + isConfigJSONFile + ", isStrorageTreeStructureJSONFile="
+				+ isStrorageTreeStructureJSONFile + ", "
 				+ (depthInTreeStructure != null ? "depthInTreeStructure=" + depthInTreeStructure + ", " : "")
 				+ (numOfFilesLimit != null ? "numOfFilesLimit=" + numOfFilesLimit + ", " : "")
 				+ (storageSize != null ? "storageSize=" + storageSize + ", " : "")
@@ -207,7 +257,9 @@ public class FileMetadata {
 		private boolean isFile;
 		private boolean isDirectory;
 		private boolean isStorage;
-		private boolean isConfigFile;
+		private boolean isDataRoot;
+		private boolean isConfigJSONFile;
+		private boolean isStrorageTreeStructureJSONFile;
 		private Integer depthInTreeStructure;
 		
 		//if directory
@@ -262,8 +314,16 @@ public class FileMetadata {
 			this.isStorage = isStorage;
 			return this;
 		}
-		public FileMetadataBuilder withIsConfigFile(boolean isConfigFile) {
-			this.isConfigFile = isConfigFile;
+		public FileMetadataBuilder withIsDataRoot(boolean isDataRoot) {
+			this.isDataRoot = isDataRoot; 
+			return this;
+		}
+		public FileMetadataBuilder withIsConfigJSONFile(boolean isConfigJSONFile) {
+			this.isConfigJSONFile = isConfigJSONFile;
+			return this;
+		}
+		public FileMetadataBuilder withIsStrorageTreeStructureJSONFile(boolean isStrorageTreeStructureJSONFile) {
+			this.isStrorageTreeStructureJSONFile = isStrorageTreeStructureJSONFile;
 			return this;
 		}
 		public FileMetadataBuilder withDepthInTreeStructure(Integer depthInTreeStrucure) {

@@ -15,6 +15,8 @@ public class StorageInformation {
 	private Map<FileMetadata, List<FileMetadata>> storageTreeStructure = new HashMap<FileMetadata, List<FileMetadata>>();
 	private FileMetadata storageDirectory;
 	private FileMetadata datarootDirectory;
+	private FileMetadata configJSON;
+	private FileMetadata strorageTreeStructureJSON;
 	private FileMetadata currentDirectory;
 	
 	public Map<FileMetadata, List<FileMetadata>> getStorageTreeStructure() {
@@ -37,6 +39,19 @@ public class StorageInformation {
 	}
 	public void setDatarootDirectory(FileMetadata datarootDirectory) {
 		this.datarootDirectory = datarootDirectory;
+	}
+	
+	public FileMetadata getConfigJSON() {
+		return configJSON;
+	}
+	public void setConfigJSON(FileMetadata configJSON) {
+		this.configJSON = configJSON;
+	}
+	public FileMetadata getStrorageTreeStructureJSON() {
+		return strorageTreeStructureJSON;
+	}
+	public void setStrorageTreeStructureJSON(FileMetadata strorageTreeStructureJSON) {
+		this.strorageTreeStructureJSON = strorageTreeStructureJSON;
 	}
 	public FileMetadata getCurrentDirectory() {
 		return currentDirectory;
