@@ -13,6 +13,7 @@ public class FileMetadata {
 	private String extension;
 	private String parentName;
 	private String absolutePath;
+	private FileMetadata parent;
 	private Date timeCreated;
 	private Date timeModified;
 	private boolean isFile;
@@ -41,6 +42,7 @@ public class FileMetadata {
 		this.timeCreated = builder.timeCreated;
 		this.timeModified = builder.timeModified;
 		this.absolutePath = builder.absolutePath;
+		this.parent = builder.parent;
 		this.isFile = builder.isFile;
 		this.isDirectory = builder.isDirectory;
 		this.isStorage = builder.isStorage;
@@ -102,6 +104,14 @@ public class FileMetadata {
 		this.absolutePath = absolutePath;
 	}
 
+	public FileMetadata getParent() {
+		return parent;
+	}
+
+	public void setParent(FileMetadata parent) {
+		this.parent = parent;
+	}
+
 	public boolean isFile() {
 		return isFile;
 	}
@@ -147,26 +157,8 @@ public class FileMetadata {
 		
 		return file;
 	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == null) {
-            return false;
-        }
 
-        if (obj.getClass() != this.getClass()) {
-            return false;
-        }
-        
-        final FileMetadata other = (FileMetadata) obj;
-        if(this.name.endsWith(other.name) && this.parentName.equals(other.parentName))
-        	return true;
-		
-		return false;
-	}
 	
-	
-
 
 	@Override
 	public String toString() {
@@ -174,8 +166,9 @@ public class FileMetadata {
 		return "FileMetadata [" + (fileID != null ? "fileID=" + fileID + ", " : "")
 				+ (name != null ? "name=" + name + ", " : "")
 				+ (extension != null ? "extension=" + extension + ", " : "")
-				+ (parentName != null ? "srcDir=" + parentName + ", " : "")
+				+ (parentName != null ? "parentName=" + parentName + ", " : "")
 				+ (absolutePath != null ? "absolutePath=" + absolutePath + ", " : "")
+				+ (parent != null ? "parent=" + parent + ", " : "")
 				+ (timeCreated != null ? "timeCreated=" + timeCreated + ", " : "")
 				+ (timeModified != null ? "timeModified=" + timeModified + ", " : "") + "isFile=" + isFile
 				+ ", isDirectory=" + isDirectory + ", isStorage=" + isStorage + ", isConfigFile=" + isConfigFile + ", "
@@ -208,6 +201,7 @@ public class FileMetadata {
 		private String extension;
 		private String parentName;
 		private String absolutePath;
+		private FileMetadata parent;
 		private Date timeCreated;
 		private Date timeModified;
 		private boolean isFile;
@@ -250,6 +244,10 @@ public class FileMetadata {
 		}
 		public FileMetadataBuilder withAbsolutePath(String absolutePath) {
 			this.absolutePath = absolutePath;
+			return this;
+		}
+		public FileMetadataBuilder withParent(FileMetadata parent) {
+			this.parent = parent;
 			return this;
 		}
 		public FileMetadataBuilder withIsFile(boolean isFile) {

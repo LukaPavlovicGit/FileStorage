@@ -8,47 +8,40 @@ import java.util.Map;
 import fileMetadata.FileMetadata;
 
 public class StorageInformation {
+	public static final String storageName = "storage";
 	public static final String datarootDirName = "dataRootDirectory";
 	public static final String configJSONFileName = "configuration.json";
-	public static final String StrorageTreeStructureJSONFileName = "storageTreeStructure.json";
-	private Map<Integer, List<FileMetadata>> StorageTreeStructure = new HashMap<Integer, List<FileMetadata>>();
-	private Integer currentTreeDepth = 0;
-	private String currentDirName = "";
-	private String storageAbsolutePath = "";
-	private String storageName =  "";
+	public static final String strorageTreeStructureJSONFileName = "storageTreeStructure.json";
+	private Map<FileMetadata, List<FileMetadata>> storageTreeStructure = new HashMap<FileMetadata, List<FileMetadata>>();
+	private FileMetadata storageDirectory;
+	private FileMetadata datarootDirectory;
+	private FileMetadata currentDirectory;
 	
-	
-	public Map<Integer, List<FileMetadata>> getStorageTreeStructure() {
-		return StorageTreeStructure;
+	public Map<FileMetadata, List<FileMetadata>> getStorageTreeStructure() {
+		return storageTreeStructure;
 	}
-	public void setStorageTreeStructure(Map<Integer, List<FileMetadata>> storageTreeStructure) {
-		StorageTreeStructure = storageTreeStructure;
-	}
-	public String getCurrentDirName() {
-		return currentDirName;
-	}
-	public void setCurrentDirName(String dirName) {
-		this.currentDirName = dirName;
-	}
-	public String getStorageAbsolutePath() {
-		return storageAbsolutePath;
-	}
-	public void setStorageAbsolutePath(String storageAbsolutePath) {
-		this.storageAbsolutePath = storageAbsolutePath;
-	}
-	public Integer getCurrentTreeDepth() {
-		return currentTreeDepth;
-	}
-	public void setCurrentTreeDepth(Integer currentTreeDepth) {
-		this.currentTreeDepth = currentTreeDepth;
-	}
-	public String getStorageName() {
-		return storageName;
-	}
-	public void setStorageName(String storageName) {
-		this.storageName = storageName;
+	public void setStorageTreeStructure(Map<FileMetadata, List<FileMetadata>> storageTreeStructure) {
+		this.storageTreeStructure = storageTreeStructure;
 	}
 	public String getStoragePathPrefix() {
-		return storageName + File.separator + datarootDirName;
+		return storageDirectory.getName() + File.separator + datarootDirectory.getName();
+	}
+	public FileMetadata getStorageDirectory() {
+		return storageDirectory;
+	}
+	public void setStorageDirectory(FileMetadata storageDrectory) {
+		this.storageDirectory = storageDrectory;
+	}
+	public FileMetadata getDatarootDirectory() {
+		return datarootDirectory;
+	}
+	public void setDatarootDirectory(FileMetadata datarootDirectory) {
+		this.datarootDirectory = datarootDirectory;
+	}
+	public FileMetadata getCurrentDirectory() {
+		return currentDirectory;
+	}
+	public void setCurrentDirectory(FileMetadata currentDirectory) {
+		this.currentDirectory = currentDirectory;
 	}
 }
