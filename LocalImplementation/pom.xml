@@ -3,4 +3,34 @@
   <groupId>raf.edu.componente</groupId>
   <artifactId>Implementation_1</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  
+  
+  <dependencies>
+  	
+  	<dependency>
+      <groupId>raf.edu.componente</groupId>
+	  <artifactId>Specification</artifactId>
+	  <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    
+    <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+	<dependency>
+	    <groupId>commons-io</groupId>
+	    <artifactId>commons-io</artifactId>
+	    <version>2.11.0</version>
+	</dependency>
+	
+	<!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+	<dependency>
+	    <groupId>com.google.code.gson</groupId>
+	    <artifactId>gson</artifactId>
+	    <version>2.9.0</version>
+	</dependency>
+
+
+    
+  </dependencies>
+  
+  
 </project>
+
