@@ -19,6 +19,7 @@ public class FileMetadata {
 	private boolean isFile;
 	private boolean isDirectory;
 	private boolean isStorage;
+	private boolean isDownloadFile;
 	private boolean isDataRoot;
 	private boolean isConfigJSONFile;
 	private boolean isStrorageTreeStructureJSONFile;
@@ -48,6 +49,7 @@ public class FileMetadata {
 		this.isFile = builder.isFile;
 		this.isDirectory = builder.isDirectory;
 		this.isStorage = builder.isStorage;
+		this.isDownloadFile = builder.isDownloadFile;
 		this.isDataRoot = builder.isDataRoot;
 		this.isConfigJSONFile = builder.isConfigJSONFile;
 		this.isStrorageTreeStructureJSONFile = builder.isStrorageTreeStructureJSONFile;
@@ -140,6 +142,14 @@ public class FileMetadata {
 		this.isStorage = isStorage;
 	}
 	
+	public boolean isDownloadFile() {
+		return isDownloadFile;
+	}
+
+	public void setDownloadFile(boolean isDownloadFile) {
+		this.isDownloadFile = isDownloadFile;
+	}
+
 	public boolean isDataRoot() {
 		return isDataRoot;
 	}
@@ -257,6 +267,7 @@ public class FileMetadata {
 		private boolean isFile;
 		private boolean isDirectory;
 		private boolean isStorage;
+		private boolean isDownloadFile;
 		private boolean isDataRoot;
 		private boolean isConfigJSONFile;
 		private boolean isStrorageTreeStructureJSONFile;
@@ -312,6 +323,10 @@ public class FileMetadata {
 		}
 		public FileMetadataBuilder withIsStorage(boolean isStorage) {
 			this.isStorage = isStorage;
+			return this;
+		}
+		public FileMetadataBuilder withIsDownloadFile(boolean isDownloadFile) {
+			this.isDownloadFile = isDownloadFile;
 			return this;
 		}
 		public FileMetadataBuilder withIsDataRoot(boolean isDataRoot) {

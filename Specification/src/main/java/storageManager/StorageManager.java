@@ -1,21 +1,21 @@
 package storageManager;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import configuration.StorageConfiguration;
-import fileMetadata.FileMetadata;
+import specification.Storage;
 import storageInformation.StorageInformation;
 
 public class StorageManager {
 	
 	private static StorageManager instance = null;
-	
+	private static Storage storage = null;
 	private StorageConfiguration storageConfiguration;
 	private StorageInformation storageInformation;
 	
 	
+    public static void registerStorage(Storage storageImplementation) {
+    	storage = storageImplementation;
+    }
+    
 	private StorageManager() {
 		this.storageConfiguration = new StorageConfiguration();
 		this.storageInformation = new StorageInformation();
@@ -33,6 +33,14 @@ public class StorageManager {
 		return instance;
 	}
 	
+	public static Storage getStorage() {
+		return storage;
+	}
+
+	public static void setStorage(Storage storage) {
+		StorageManager.storage = storage;
+	}
+
 	public StorageConfiguration getStorageConfiguration() {
 		return storageConfiguration;
 	}
