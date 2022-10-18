@@ -1,6 +1,7 @@
 package storageInformation;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,6 +18,10 @@ public class StorageInformation {
 	public static final String storageInformationJSONFileName = "storageInformation.json";
 	
 	private Map<FileMetadata, List<FileMetadata>> storageTreeStructure = new HashMap<FileMetadata, List<FileMetadata>>();
+	// za potrebe serijalizacije i deserijalizacije storageTreeStructure structure !!!!
+	private List<FileMetadata> keys = new ArrayList<>();
+	private Map<Integer, List<FileMetadata>> map = new HashMap<>();
+	// ============================================================
 	
 	private FileMetadata storageDirectory;
 	private FileMetadata datarootDirectory;
@@ -36,6 +41,21 @@ public class StorageInformation {
 	}
 	public void setStorageTreeStructure(Map<FileMetadata, List<FileMetadata>> storageTreeStructure) {
 		this.storageTreeStructure = storageTreeStructure;
+	}
+	public List<FileMetadata> getKeys() {
+		return keys;
+	}
+	public void setKeys(List<FileMetadata> keys) {
+		this.keys = keys;
+	}
+	public Map<Integer, List<FileMetadata>> getMap() {
+		return map;
+	}
+	public void setMap(Map<Integer, List<FileMetadata>> map) {
+		this.map = map;
+	}
+	public FileMetadata getStorageInformationJSONfile() {
+		return storageInformationJSONfile;
 	}
 	public String getStoragePathPrefix() {
 		return storageDirectory.getName() + File.separator + datarootDirectory.getName();
@@ -131,5 +151,29 @@ public class StorageInformation {
 		return builder.toString();
 	}
 	
+	public void dismantleStorageTreeStructure() {
+		
+		this.keys = new ArrayList<>();
+		this.map = new HashMap<Integer, List<FileMetadata>>();
+		
+		int i = 0;
+		for(FileMetadata f : storageTreeStructure.keySet()) {
+			this.keys.add(i, f);
+			this.map.put(i++, storageTreeStructure.get(f));
+		}
+		
+		this.storageTreeStructure = null;
+	}
 	
+	public void buildStorageTreeStructure() {
+		
+		this.storageTreeStructure = new HashMap<FileMetadata, List<FileMetadata>>();
+		
+		for(int i = 0 ; i < this.keys.size() ; i++) {
+			this.storageTreeStructure.put( this.keys.get(i), this.map.get(i) );
+		}
+		
+		this.keys = null;
+		this.map = null;
+	}
 }
