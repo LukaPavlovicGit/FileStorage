@@ -7,11 +7,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import configuration.StorageConfiguration;
@@ -19,6 +21,8 @@ import exception.DirectoryException;
 import exception.InvalidArgumentsExcpetion;
 import exception.NamingPolicyException;
 import exception.NotFound;
+import exception.PathException;
+import exception.StorageException;
 import exception.StorageSizeException;
 import exception.UnsupportedFileException;
 import fileMetadata.FileMetadata;
@@ -26,9 +30,11 @@ import fileMetadata.FileMetadata.FileMetadataBuilder;
 import storageInformation.StorageInformation;
 import storageManager.StorageManager;
 
-public abstract class Storage {
+public abstract class Storage<T> {
 	
-	public abstract void createStorage(String dest, StorageConfiguration storageConfiguration);
+	public abstract void createStorage(String dest, StorageConfiguration storageConfiguration) throws StorageException, NamingPolicyException, PathException;
+	
+	public abstract void connectToStorage(String src) throws NotFound;
 	
 	public abstract boolean createDirectory(String dest, String name, Integer... filesLimit) throws StorageSizeException, NamingPolicyException, DirectoryException;
 	
@@ -69,19 +75,19 @@ public abstract class Storage {
 	public abstract void download(String name, String src, String dest) throws NotFound;
 	
 	// za konfuguraciju i strorageTreeStructure
-	public abstract void saveToJSON(String path);
+	public abstract void saveToJSON(Object obj);
 	
 	// za konfuguraciju i strorageTreeStructure
-	public abstract void readFromJSON(String path);
+	public abstract void readFromJSON(Object obj);
 	
-	public void changeDirectory(String path) throws NotFound {
+	public void changeDirectory(String dest) throws NotFound {
 		
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<FileMetadata, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();
 		FileMetadata currentDirectory = storageInformation.getCurrentDirectory();
-		Path p = Paths.get(path);
+		Path p = Paths.get(dest);
 		
-		if(path.equals("cd..")) {
+		if(dest.equals("cd..")) {
 			if(currentDirectory.getDepthInTreeStructure() == 0)
 				return;
 			
@@ -94,7 +100,7 @@ public abstract class Storage {
 		FileMetadata startFromDirectory = currentDirectory;
 		String storagePathPrefix = storageInformation.getStoragePathPrefix();
 		
-		if(path.startsWith(storagePathPrefix))
+		if(dest.startsWith(storagePathPrefix))
 			startFromDirectory = storageInformation.getStorageDirectory();
 		
 		desiredDirectory = getLastDirectoryOnPath(p.iterator(), startFromDirectory, storageTreeStracture);
@@ -364,48 +370,98 @@ public abstract class Storage {
 		return result;
 	}
 	
-	public boolean createStorage(String storageDest, 
-								 FileMetadata storage,
-								 FileMetadata dataRoot, 
-								 FileMetadata configJSON,
-								 FileMetadata strorageTreeStructureJSON) {
+	protected boolean createStorageTreeStructure(String dest) {
 		
+		StorageConfiguration storageConfiguration = StorageManager.getInstance().getStorageConfiguration();
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<FileMetadata, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();
+		Path path = Paths.get(dest);
+
+		FileMetadata storage = new FileMetadataBuilder()
+			 				.withFileID(storageInformation.getStorageDirectoryID())
+			 				.withName(path.getFileName().toString())
+			 				.withAbsolutePath(dest)
+			 				.withTimeCreated(new Date())
+			 				.withTimeModified(new Date())
+			 				.withIsDirectory(true)
+			 				.withIsStorage(true)
+			 				.withStorageSize(storageConfiguration.getStorageSize())
+			 				.withUnsupportedFiles(storageConfiguration.getUnsupportedFiles())
+			 				.build();
 		
-		storage.setName(StorageInformation.storageName);
-		storage.setStorage(true);
-		storage.setAbsolutePath(storageDest + File.separator + StorageInformation.storageName);
+		FileMetadata dataRoot = new FileMetadataBuilder()
+							.withFileID(storageInformation.getDatarootDirectoryID())
+							.withName(StorageInformation.datarootDirName)
+							.withAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.datarootDirName)
+							.withParent(storage)
+							.withTimeCreated(new Date())
+							.withTimeModified(new Date())
+							.withIsDirectory(true)
+							.withIsDataRoot(true)
+							.build();
+							
+		FileMetadata configJSONfile = new FileMetadataBuilder()
+							.withFileID(storageInformation.getConfigJSOnID())
+							.withName(StorageInformation.configJSONFileName)
+							.withAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.configJSONFileName)
+							.withParent(storage)
+							.withTimeCreated(new Date())
+							.withTimeModified(new Date())
+							.withIsFile(true)
+							.withIsConfigJSONFile(true)
+							.build();
+				
+		FileMetadata strorageInformationJSONfile = new FileMetadataBuilder()
+							.withFileID(storageInformation.getStorageTreeStructureJSOnID())
+							.withName(StorageInformation.storageInformationJSONFileName)
+							.withAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.storageInformationJSONFileName)
+							.withParent(storage)
+							.withTimeCreated(new Date())
+							.withTimeModified(new Date())
+							.withIsFile(true)
+							.withIsStrorageTreeStructureJSONFile(true)
+							.build();
 		
-		dataRoot.setName(StorageInformation.datarootDirName);
-		dataRoot.setDataRoot(true);
-		dataRoot.setAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.datarootDirName);
-		
-		configJSON.setName(StorageInformation.configJSONFileName);
-		configJSON.setConfigJSONFile(true);
-		configJSON.setAbsolutePath(storage.getAbsolutePath() + File.separator + configJSON.getName());
-		
-		strorageTreeStructureJSON.setName(StorageInformation.strorageTreeStructureJSONFileName);
-		strorageTreeStructureJSON.setStrorageTreeStructureJSONFile(true);
-		strorageTreeStructureJSON.setAbsolutePath(storage.getAbsolutePath() + File.separator + strorageTreeStructureJSON.getName());
+		FileMetadata downloads = new FileMetadataBuilder()
+							.withFileID(storageInformation.getDownloadFileID())
+							.withName(StorageInformation.downloadFileName)
+							.withAbsolutePath(storage + File.separator + StorageInformation.downloadFileName)
+							.withParent(storage)
+							.withTimeCreated(new Date())
+							.withTimeModified(new Date())
+							.withIsFile(true)
+							.withIsDownloadFile(true)
+							.build();
+	 
+
 		
 		List<FileMetadata> storageAdjacent = new ArrayList<FileMetadata>();
 		storageAdjacent.add(dataRoot);
-		storageAdjacent.add(configJSON);
-		storageAdjacent.add(strorageTreeStructureJSON);
+		storageAdjacent.add(configJSONfile);
+		storageAdjacent.add(strorageInformationJSONfile);
+		storageAdjacent.add(downloads);
 		
 		storageTreeStracture.put(storage, storageAdjacent);
 		
 		storageInformation.setStorageDirectory(storage);
 		storageInformation.setDatarootDirectory(dataRoot);
-		storageInformation.setConfigJSON(configJSON);
-		storageInformation.setStrorageTreeStructureJSON(strorageTreeStructureJSON);
+		storageInformation.setConfigJSONfile(configJSONfile);
+		storageInformation.setStorageInformationJSONfile(strorageInformationJSONfile);
 		storageInformation.setCurrentDirectory(dataRoot);
+		storageInformation.setDownloadFile(downloads);
+		
+		saveToJSON(storageInformation);
 		
 		return true;
 	}
 	
-	public boolean addFileMetadataToStorage(String dst, FileMetadata fileMetadata) throws NotFound {
+	// poziva se kada se konektujemo na postojeci storage
+	protected boolean raiseStrorageTreeStructure(String jsonFormat) {
+		
+		return true;
+	}
+	
+	protected boolean addFileMetadataToStorage(String dst, FileMetadata fileMetadata) throws NotFound {
 		
 		Path path = Paths.get(dst);
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
@@ -427,7 +483,7 @@ public abstract class Storage {
 		return true;
 	}
 	
-	public boolean removeFileMetadataFromStorage(String filePath) throws NotFound {
+	protected boolean removeFileMetadataFromStorage(String filePath) throws NotFound {
 		
 		Path path = Paths.get(filePath);
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
@@ -449,7 +505,7 @@ public abstract class Storage {
 		return true;
 	}
 	
-	public boolean moveFileMetadata(String filePath, String newDest) throws NotFound {
+	protected boolean moveFileMetadata(String filePath, String newDest) throws NotFound {
 		
 		Path path1 = Paths.get(filePath);
 		Path path2 = Paths.get(newDest);
@@ -479,7 +535,7 @@ public abstract class Storage {
 	}
 	
 	
-	public boolean renameFileMetadata(String filePath, String newName) throws NotFound{
+	protected boolean renameFileMetadata(String filePath, String newName) throws NotFound{
 		
 		Path path = Paths.get(filePath);
 		Map<FileMetadata, List<FileMetadata>> storageTreeStracture = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure();
@@ -532,5 +588,4 @@ public abstract class Storage {
 		
 		return false;
 	}
-	
 }
