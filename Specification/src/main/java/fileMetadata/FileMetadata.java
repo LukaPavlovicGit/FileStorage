@@ -11,6 +11,7 @@ public class FileMetadata {
 	private String fileID;
 	private String name;
 	private String absolutePath;
+	private Long size = 0L;
 	private FileMetadata parent;
 	private Date timeCreated;
 	private Date timeModified;
@@ -90,6 +91,14 @@ public class FileMetadata {
 
 	public void setAbsolutePath(String absolutePath) {
 		this.absolutePath = absolutePath;
+	}
+	
+	public Long getSize() {
+		return size;
+	}
+
+	public void setSize(Long size) {
+		this.size = size;
 	}
 
 	public FileMetadata getParent() {
@@ -189,7 +198,7 @@ public class FileMetadata {
 		
 		return file;
 	}
-
+	
 	
 
 	@Override
@@ -198,12 +207,12 @@ public class FileMetadata {
 		return "FileMetadata [" + (fileID != null ? "fileID=" + fileID + ", " : "")
 				+ (name != null ? "name=" + name + ", " : "")
 				+ (absolutePath != null ? "absolutePath=" + absolutePath + ", " : "")
-				+ (parent != null ? "parent=" + parent + ", " : "")
+				+ (size != null ? "size=" + size + ", " : "") + (parent != null ? "parent=" + parent + ", " : "")
 				+ (timeCreated != null ? "timeCreated=" + timeCreated + ", " : "")
 				+ (timeModified != null ? "timeModified=" + timeModified + ", " : "") + "isFile=" + isFile
-				+ ", isDirectory=" + isDirectory + ", isStorage=" + isStorage + ", isDataRoot=" + isDataRoot
-				+ ", isConfigJSONFile=" + isConfigJSONFile + ", isStrorageTreeStructureJSONFile="
-				+ isStrorageTreeStructureJSONFile + ", "
+				+ ", isDirectory=" + isDirectory + ", isStorage=" + isStorage + ", isDownloadFile=" + isDownloadFile
+				+ ", isDataRoot=" + isDataRoot + ", isConfigJSONFile=" + isConfigJSONFile
+				+ ", isStrorageTreeStructureJSONFile=" + isStrorageTreeStructureJSONFile + ", "
 				+ (numOfFilesLimit != null ? "numOfFilesLimit=" + numOfFilesLimit + ", " : "")
 				+ (storageSize != null ? "storageSize=" + storageSize + ", " : "")
 				+ (unsupportedFiles != null ? "unsupportedFiles=" + toString(unsupportedFiles, maxLen) : "") + "]";
@@ -221,8 +230,6 @@ public class FileMetadata {
 		builder.append("]");
 		return builder.toString();
 	}
-
-
 
 	// Builder
 	public static class FileMetadataBuilder{
