@@ -11,7 +11,6 @@ public class StorageConfiguration {
 	private Set<String> unsupportedFiles = new HashSet<>();
 	private Map<String, Integer> dirNumberOfFilesLimit = new HashMap<>();
 	
-	
 	public StorageConfiguration() {
 		
 	}

@@ -17,6 +17,8 @@ public class StorageInformation {
 	public static final String configJSONFileName = "configuration.json";
 	public static final String storageInformationJSONFileName = "storageInformation.json";
 	
+	private boolean storageConnected = false;
+	
 	private Map<FileMetadata, List<FileMetadata>> storageTreeStructure = new HashMap<FileMetadata, List<FileMetadata>>();
 	// za potrebe serijalizacije i deserijalizacije storageTreeStructure structure !!!!
 	private List<FileMetadata> keys = new ArrayList<>();
@@ -36,6 +38,14 @@ public class StorageInformation {
 	private String configJSOnID;
 	private String storageTreeStructureJSOnID;
 	
+	
+	
+	public boolean isStorageConnected() {
+		return storageConnected;
+	}
+	public void setStorageConnected(boolean storageConnected) {
+		this.storageConnected = storageConnected;
+	}
 	public Map<FileMetadata, List<FileMetadata>> getStorageTreeStructure() {
 		return storageTreeStructure;
 	}

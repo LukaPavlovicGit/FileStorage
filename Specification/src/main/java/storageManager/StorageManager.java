@@ -6,7 +6,6 @@ import storageInformation.StorageInformation;
 
 public class StorageManager {
 	
-	public static boolean storageIsConnected = false;
 	private static StorageManager instance = null;
 	private static Storage storage = null;
 	private StorageConfiguration storageConfiguration;

@@ -19,6 +19,7 @@ import exception.NamingPolicyException;
 import exception.NotAllowedOperation;
 import exception.NotFound;
 import exception.PathException;
+import exception.StorageConnectionException;
 import exception.StorageException;
 import exception.StorageSizeException;
 import exception.UnsupportedFileException;
@@ -39,10 +40,10 @@ public class LocalStorageImplementation extends Storage {
 	
 	@Override
 	public void createStorage(String dest, StorageConfiguration storageConfiguration) 
-			throws StorageException, NamingPolicyException, PathException, NotAllowedOperation {
+			throws StorageException, NamingPolicyException, PathException, StorageConnectionException {
 		
-		if(StorageManager.storageIsConnected)
-				throw new NotAllowedOperation("First disconnect from the current storage in order to create new one storage!");
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
+			throw new StorageConnectionException("Disconnect from the current storage in order to create new one storage!");
 		
 		Path path = Paths.get(dest);
 		
@@ -81,15 +82,14 @@ public class LocalStorageImplementation extends Storage {
 			StorageManager.getInstance().setStorageConfiguration(storageConfiguration);
 		
 		super.createStorageTreeStructure(dest);
-		
-		StorageManager.storageIsConnected = true;
+		StorageManager.getInstance().getStorageInformation().setStorageConnected(true);
 	}
 
 	@Override
-	public void connectToStorage(String src) throws NotFound, StorageException, NotAllowedOperation {
+	public void connectToStorage(String src) throws NotFound, StorageException, StorageConnectionException {
 		
-		if(StorageManager.storageIsConnected)
-			throw new NotAllowedOperation("First disconnect from the current storage in order to create new one storage!");
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
+			throw new StorageConnectionException("Disconnection from the current storage is requiered in order to connect to new one!");
 		
 		Path path = Paths.get(src);
 		
@@ -114,21 +114,26 @@ public class LocalStorageImplementation extends Storage {
 		
 		readFromJSON(new StorageInformation(), src);
 		readFromJSON(new StorageConfiguration(), src);
-		
-		StorageManager.storageIsConnected = true;
+		StorageManager.getInstance().getStorageInformation().setStorageConnected(true);
 	}
 	
 	@Override
 	public void disconnectFromStorage() {
 		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			return;
+		
 		saveToJSON(new StorageInformation());
 		saveToJSON(new StorageConfiguration());
+		StorageManager.getInstance().getStorageInformation().setStorageConnected(false);
 		
-		StorageManager.storageIsConnected = false;
 	}
 
 	@Override
-	public boolean createDirectory(String dest, Integer... filesLimit) { // throws StorageSizeException, NamingPolicyException, DirectoryException
+	public boolean createDirectory(String dest, Integer... filesLimit) throws StorageConnectionException { // throws StorageSizeException, NamingPolicyException, DirectoryException
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		try {
 		
@@ -153,7 +158,10 @@ public class LocalStorageImplementation extends Storage {
 	}
 
 	@Override
-	public boolean createFile(String dest) {
+	public boolean createFile(String dest) throws StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 		if(!dest.startsWith(storagePathPrefix))
@@ -183,7 +191,10 @@ public class LocalStorageImplementation extends Storage {
 	}
 
 	@Override
-	public void move(String filePath, String newDest) {
+	public void move(String filePath, String newDest) throws StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 		
@@ -203,7 +214,10 @@ public class LocalStorageImplementation extends Storage {
 	}
 
 	@Override
-	public void remove(String filePath){
+	public void remove(String filePath) throws StorageConnectionException{
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 		
@@ -221,7 +235,10 @@ public class LocalStorageImplementation extends Storage {
 		remove(new File(filePath));
 	}
 	
-	private void remove(File file) {
+	private void remove(File file) throws StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		if(file.isFile()) {
 			file.delete();
@@ -236,7 +253,10 @@ public class LocalStorageImplementation extends Storage {
 	}
 
 	@Override
-	public void rename(String filePath, String newName) {
+	public void rename(String filePath, String newName) throws StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 		if(!filePath.startsWith(storagePathPrefix))
@@ -257,7 +277,10 @@ public class LocalStorageImplementation extends Storage {
 	}
 
 	@Override
-	public void download(String filePath, String dest) {
+	public void download(String filePath, String dest) throws StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		Path srcPath = Paths.get(filePath);
 		Path destPath = Paths.get(dest);
@@ -280,7 +303,10 @@ public class LocalStorageImplementation extends Storage {
 	}
 	
 	@Override
-	public void copyFile(String filePath, String dest){
+	public void copyFile(String filePath, String dest) throws StorageConnectionException{
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		try {
 			
@@ -310,12 +336,37 @@ public class LocalStorageImplementation extends Storage {
 	}
 	
 	@Override
-	public void writeToFile(String filePath, String text, boolean append) {
+	public void writeToFile(String filePath, String text, boolean append) throws NotFound, StorageConnectionException, StorageSizeException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 		if(!filePath.startsWith(storagePathPrefix))
 			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
-	
+		
+		File file = new File(filePath);
+		if(!file.exists() || !file.isFile())
+			throw new NotFound("File not found");
+		
+		Long size = text.length() + ((append == true) ? file.length() : 0L);
+		
+		Long storageSize = StorageManager.getInstance().getStorageConfiguration().getStorageSize();
+		if(storageSize != null) {
+			if(storageSize - size < 0)
+				throw new StorageSizeException("Storage size limit has been reached!");
+			
+			StorageManager.getInstance().getStorageConfiguration().setStorageSize(storageSize - size);;
+		}
+		
+		try (FileWriter fileOut = new FileWriter(filePath, append)) {
+	           
+			fileOut.write(text);
+	    
+		} catch (Exception e) {
+	        e.printStackTrace();
+	    }
+		
 	}
 
 	@Override
