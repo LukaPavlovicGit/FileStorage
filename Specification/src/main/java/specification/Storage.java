@@ -172,14 +172,8 @@ public abstract class Storage {
 		return result;
 	}
 	
-	public Map<FileMetadata, List<FileMetadata>> listDirectory(String src, 
-															   boolean onlyDirs, 
-															   boolean onlyFiles,
-															   boolean searchSubDirecories, 
-														       String extension,
-															   String prefix,
-															   String sufix,
-															   String subWord) throws NotFound, StorageConnectionException {
+	public Map<FileMetadata, List<FileMetadata>> listDirectory(String src, boolean onlyDirs, boolean onlyFiles, boolean searchSubDirecories, 
+				String extension, String prefix, String sufix, String subWord) throws NotFound, StorageConnectionException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -263,12 +257,8 @@ public abstract class Storage {
 	}
 	
 	
-	public Map<FileMetadata, List<FileMetadata>> resultSort(Map<FileMetadata, List<FileMetadata>> result, 
-														    boolean byName,
-														    boolean byCreationDate,
-														    boolean byModificationDate,
-														    boolean ascending,
-														    boolean descending) throws StorageConnectionException{
+	public Map<FileMetadata, List<FileMetadata>> resultSort(Map<FileMetadata, List<FileMetadata>> result, boolean byName, boolean byCreationDate, 
+			boolean byModificationDate, boolean ascending, boolean descending) throws StorageConnectionException{
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -313,9 +303,8 @@ public abstract class Storage {
 	
 	// atributes inicilalizovati na false ( Arrays.fill(atributes, Boolean.FALSE) )
 	
-	public Map<FileMetadata, List<FileMetadata>> resultFilter(Map<FileMetadata, List<FileMetadata>> result,
-														      boolean[] atributes,
-														      Date[][] periods) throws InvalidArgumentsExcpetion, StorageConnectionException{
+	public Map<FileMetadata, List<FileMetadata>> resultFilter(Map<FileMetadata, List<FileMetadata>> result, boolean[] atributes, Date[][] periods) 
+			throws InvalidArgumentsExcpetion, StorageConnectionException{
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
