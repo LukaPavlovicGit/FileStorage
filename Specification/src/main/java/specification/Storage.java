@@ -23,6 +23,7 @@ import exception.NamingPolicyException;
 import exception.NotAllowedOperation;
 import exception.NotFound;
 import exception.PathException;
+import exception.StorageConnectionException;
 import exception.StorageException;
 import exception.StorageSizeException;
 import exception.UnsupportedFileException;
@@ -34,13 +35,13 @@ import storageManager.StorageManager;
 public abstract class Storage {
 	
 	public abstract void createStorage(String dest, StorageConfiguration storageConfiguration) 
-			throws StorageException, NamingPolicyException, PathException, NotAllowedOperation;
+			throws StorageException, NamingPolicyException, PathException, StorageConnectionException;
 	
-	public abstract void connectToStorage(String src) throws NotFound, StorageException, NotAllowedOperation;
+	public abstract void connectToStorage(String src) throws NotFound, StorageException, StorageConnectionException;
 	
 	public abstract void disconnectFromStorage();
 	
-	public abstract boolean createDirectory(String dest, Integer... filesLimit) throws StorageSizeException, NamingPolicyException, DirectoryException;
+	public abstract boolean createDirectory(String dest, Integer... filesLimit) throws StorageSizeException, NamingPolicyException, DirectoryException, StorageConnectionException;
 	
 	public void createDirectories(String dest, Map<String, Integer> dirNameAndFilesLimit) {
 		try {
@@ -50,12 +51,12 @@ public abstract class Storage {
 				createDirectory(dest + File.separator + name, filesLimit);		
 			}
 			
-		} catch (StorageSizeException | DirectoryException | NamingPolicyException e) {
+		} catch (StorageSizeException | DirectoryException | NamingPolicyException | StorageConnectionException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public abstract boolean createFile(String dest) throws StorageSizeException, NamingPolicyException, UnsupportedFileException;
+	public abstract boolean createFile(String dest) throws StorageSizeException, NamingPolicyException, UnsupportedFileException, StorageConnectionException;
 	
 	public void createFiles(String dest, List<String> names) {
 		try {
@@ -64,29 +65,32 @@ public abstract class Storage {
 				createFile(dest + File.separator + name);
 			}
 		
-		} catch (StorageSizeException | NamingPolicyException | UnsupportedFileException e) {	
+		} catch (StorageSizeException | NamingPolicyException | UnsupportedFileException | StorageConnectionException e) {	
 			e.printStackTrace();
 		}
 		
 	}
 	
-	public abstract void move(String filePath, String newDest) throws NotFound, DirectoryException;
+	public abstract void move(String filePath, String newDest) throws NotFound, DirectoryException, StorageConnectionException;
 	
-	public abstract void remove(String filePath) throws NotFound;
+	public abstract void remove(String filePath) throws NotFound, StorageConnectionException;
 	
-	public abstract void rename(String filePath, String newName) throws NotFound;
+	public abstract void rename(String filePath, String newName) throws NotFound, StorageConnectionException;
 	
-	public abstract void download(String filePath, String downloaDest) throws NotFound;
+	public abstract void download(String filePath, String downloaDest) throws NotFound, StorageConnectionException;
 	
-	public abstract void copyFile(String filePath, String dest);
+	public abstract void copyFile(String filePath, String dest) throws NotFound, StorageConnectionException;
 	
-	public abstract void writeToFile(String filePath, String text, boolean append) throws StorageSizeException;
+	public abstract void writeToFile(String filePath, String text, boolean append) throws NotFound, StorageSizeException, StorageConnectionException;
 	
-	public abstract void saveToJSON(Object obj);
+	protected abstract void saveToJSON(Object obj);
 	
-	public abstract void readFromJSON(Object obj, String path);
+	protected abstract void readFromJSON(Object obj, String path);
 	
-	public void changeDirectory(String dest) throws NotFound {
+	public void changeDirectory(String dest) throws NotFound, StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<FileMetadata, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();
@@ -116,7 +120,10 @@ public abstract class Storage {
 			throw new NotFound("Location does not exist!");
 	}
 	
-	public boolean find(String filePath) {
+	public boolean find(String filePath) throws StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		Path path = Paths.get(filePath);
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
@@ -131,7 +138,10 @@ public abstract class Storage {
 		return checkPath(path.iterator(), startFromDirectory, storageTreeStracture);
 	}
 	
-	public Map<String, Boolean> find(List<String> filePaths){
+	public Map<String, Boolean> find(List<String> filePaths) throws StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		Map<String, Boolean> result = new HashMap<>();
 		for(String path : filePaths) 
@@ -140,7 +150,10 @@ public abstract class Storage {
 		return result;
 	}
 	
-	public List<String> findDestinantions(String name) {
+	public List<String> findDestinantions(String name) throws StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		List<String> result = new ArrayList<>();
 		Map<FileMetadata, List<FileMetadata>> storageTreeStracture = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure();
@@ -166,7 +179,10 @@ public abstract class Storage {
 														       String extension,
 															   String prefix,
 															   String sufix,
-															   String subWord) throws NotFound {
+															   String subWord) throws NotFound, StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 
 		Path path = Paths.get(src);
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
@@ -252,7 +268,10 @@ public abstract class Storage {
 														    boolean byCreationDate,
 														    boolean byModificationDate,
 														    boolean ascending,
-														    boolean descending) {
+														    boolean descending) throws StorageConnectionException{
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		Comparator<FileMetadata> comparator = Comparator.comparing(FileMetadata::getName);
 		
@@ -296,7 +315,10 @@ public abstract class Storage {
 	
 	public Map<FileMetadata, List<FileMetadata>> resultFilter(Map<FileMetadata, List<FileMetadata>> result,
 														      boolean[] atributes,
-														      Date[][] periods) throws InvalidArgumentsExcpetion{
+														      Date[][] periods) throws InvalidArgumentsExcpetion, StorageConnectionException{
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
 		Date createdTimeLowerBound = null;
 		Date createdTimeUpperBound = null;
@@ -635,12 +657,12 @@ public abstract class Storage {
 		if(dest == null)
 			throw new NotFound("Destination path not correct!");
 		
-		FileMetadata storage = StorageManager.getInstance().getStorageInformation().getStorageDirectory();
-		if(storage.getStorageSize() != null) {
-			if(storage.getStorageSize() - file.getSize() < 0)
+		Long storageSize = StorageManager.getInstance().getStorageConfiguration().getStorageSize();
+		if(storageSize != null) {
+			if(storageSize - file.getSize() < 0)
 				throw new StorageSizeException("Storage size limit has been reached!");
 			
-			storage.setStorageSize(storage.getStorageSize() - file.getSize());
+			 StorageManager.getInstance().getStorageConfiguration().setStorageSize(storageSize - file.getSize());
 		}
 		
 		if(dest.getNumOfFilesLimit() != null) {
@@ -661,7 +683,7 @@ public abstract class Storage {
 		storageTreeStracture.get(dest).add(file);
 	}
 	
-	protected FileMetadata getLastFileMetadataOnPath(Iterator<Path> iterator, FileMetadata directory, final Map<FileMetadata, List<FileMetadata>> storageTreeStracture) {
+	private FileMetadata getLastFileMetadataOnPath(Iterator<Path> iterator, FileMetadata directory, final Map<FileMetadata, List<FileMetadata>> storageTreeStracture) {
 		
 		if(!iterator.hasNext())
 			return directory;
