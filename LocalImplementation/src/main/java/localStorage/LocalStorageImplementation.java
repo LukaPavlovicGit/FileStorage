@@ -16,6 +16,7 @@ import com.google.gson.GsonBuilder;
 import configuration.StorageConfiguration; 
 import exception.DirectoryException;
 import exception.NamingPolicyException;
+import exception.NotAllowedOperation;
 import exception.NotFound;
 import exception.PathException;
 import exception.StorageException;
@@ -27,22 +28,22 @@ import storageInformation.StorageInformation;
 import storageManager.StorageManager;
 
 public class LocalStorageImplementation extends Storage {
-	
-	private StorageManager storageManager;
-	private StorageInformation storageInformation;
-	
+		
 	static {
 		StorageManager.registerStorage(new LocalStorageImplementation());
 	}
 		
 	private LocalStorageImplementation() {
-		this.storageManager = StorageManager.getInstance();
-		this.storageInformation = StorageManager.getInstance().getStorageInformation();
+		
 	}
 	
 	@Override
-	public void createStorage(String dest, StorageConfiguration storageConfiguration) throws StorageException, NamingPolicyException, PathException {
-	
+	public void createStorage(String dest, StorageConfiguration storageConfiguration) 
+			throws StorageException, NamingPolicyException, PathException, NotAllowedOperation {
+		
+		if(StorageManager.storageIsConnected)
+				throw new NotAllowedOperation("First disconnect from the current storage in order to create new one storage!");
+		
 		Path path = Paths.get(dest);
 		
 		String storageName = path.getFileName().toString();
@@ -77,16 +78,18 @@ public class LocalStorageImplementation extends Storage {
 		}
 		
 		if(storageConfiguration != null)
-			storageManager.setStorageConfiguration(storageConfiguration);
+			StorageManager.getInstance().setStorageConfiguration(storageConfiguration);
 		
 		super.createStorageTreeStructure(dest);
 		
-		saveToJSON(storageInformation);
-		saveToJSON(storageConfiguration);
+		StorageManager.storageIsConnected = true;
 	}
 
 	@Override
-	public void connectToStorage(String src) throws NotFound, StorageException {
+	public void connectToStorage(String src) throws NotFound, StorageException, NotAllowedOperation {
+		
+		if(StorageManager.storageIsConnected)
+			throw new NotAllowedOperation("First disconnect from the current storage in order to create new one storage!");
 		
 		Path path = Paths.get(src);
 		
@@ -111,6 +114,17 @@ public class LocalStorageImplementation extends Storage {
 		
 		readFromJSON(new StorageInformation(), src);
 		readFromJSON(new StorageConfiguration(), src);
+		
+		StorageManager.storageIsConnected = true;
+	}
+	
+	@Override
+	public void disconnectFromStorage() {
+		
+		saveToJSON(new StorageInformation());
+		saveToJSON(new StorageConfiguration());
+		
+		StorageManager.storageIsConnected = false;
 	}
 
 	@Override
@@ -128,9 +142,9 @@ public class LocalStorageImplementation extends Storage {
 			e.printStackTrace();
 		}
 		
-		String storagePathPrefix = storageInformation.getStoragePathPrefix();
+		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 		if(!dest.startsWith(storagePathPrefix))
-			dest = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + dest;
+			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest;
 		
 		Path path = Paths.get(dest);
 		new File(path.toString()).mkdir();
@@ -141,9 +155,9 @@ public class LocalStorageImplementation extends Storage {
 	@Override
 	public boolean createFile(String dest) {
 		
-		String storagePathPrefix = storageInformation.getStoragePathPrefix();
+		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 		if(!dest.startsWith(storagePathPrefix))
-			dest = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + dest;
+			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest;
 		
 		try {
 			
@@ -166,20 +180,18 @@ public class LocalStorageImplementation extends Storage {
 		}
 		
 		return true;
-		
 	}
 
 	@Override
 	public void move(String filePath, String newDest) {
 		
-		String storagePathPrefix = storageInformation.getStoragePathPrefix();
+		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 		
 		if(!filePath.startsWith(storagePathPrefix))
-			filePath = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
+			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
 		if(!newDest.startsWith(storagePathPrefix))
-			newDest = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + newDest;
+			newDest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + newDest;
 		
-
 		try {
 			
 			super.moveFileMetadata(filePath, newDest);
@@ -188,17 +200,15 @@ public class LocalStorageImplementation extends Storage {
 		} catch (DirectoryException | NotFound | IOException e) {
 			e.printStackTrace();
 		}
-		
-		
 	}
 
 	@Override
 	public void remove(String filePath){
 		
-		String storagePathPrefix = storageInformation.getStoragePathPrefix();
+		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 		
 		if(!filePath.startsWith(storagePathPrefix))
-			filePath = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
+			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
 		
 		try {
 			
@@ -209,7 +219,6 @@ public class LocalStorageImplementation extends Storage {
 		}
 		
 		remove(new File(filePath));
-		
 	}
 	
 	private void remove(File file) {
@@ -227,26 +236,85 @@ public class LocalStorageImplementation extends Storage {
 	}
 
 	@Override
-	public void rename(String filePath, String newName) throws NotFound, NamingPolicyException {
-		// TODO Auto-generated method stub
+	public void rename(String filePath, String newName) {
 		
+		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
+		if(!filePath.startsWith(storagePathPrefix))
+			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
+		
+		try {
+			// ako u direktorijumu vec postoji fajl sa imenom newName, konkateniramo ga sa '*'
+			newName = super.renameFileMetadata(filePath, newName);
+			
+			Path oldDest = Paths.get(filePath);
+			Path newDest = oldDest.getParent().resolve( newName );
+			
+			FileUtils.moveToDirectory(new File(oldDest.toString()), new File(newDest.toString()), false);
+			
+		} catch (NotFound | IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
-	public void download(String filePath, String downloaDest) throws NotFound {
-		// TODO Auto-generated method stub
+	public void download(String filePath, String dest) {
 		
+		Path srcPath = Paths.get(filePath);
+		Path destPath = Paths.get(dest);
+		
+		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
+		String userDirectory = System.getProperty("user.home");
+		
+		if(!filePath.startsWith(storagePathPrefix))
+			srcPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath()).resolve(filePath);
+		
+		if(!dest.startsWith(userDirectory))
+			destPath = Paths.get(userDirectory).resolve(destPath.getFileName());
+		
+		
+		try {
+			FileUtils.copyToDirectory(new File(srcPath.toString()), new File(destPath.toString()));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
-	public void copyFile(String filePath, String dest) {
-		// TODO Auto-generated method stub
+	public void copyFile(String filePath, String dest){
 		
+		try {
+			
+			super.copyFileMetadata(filePath, dest);
+		
+		} catch (StorageSizeException | NotFound | DirectoryException e) {
+			e.printStackTrace();
+		}
+		
+		Path srcPath = Paths.get(filePath);
+		Path destPath = Paths.get(dest);
+		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
+
+		if(!filePath.startsWith(storagePathPrefix))
+			srcPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath()).resolve(filePath);
+		
+		if(!dest.startsWith(storagePathPrefix))
+			destPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath()).resolve(destPath);
+		
+		try {
+			
+			FileUtils.copyToDirectory(new File(srcPath.toString()), new File(destPath.toString()));
+		
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
-	public void writeToFile(String filePath, String text) {
+	public void writeToFile(String filePath, String text, boolean append) {
 		
+		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
+		if(!filePath.startsWith(storagePathPrefix))
+			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
 	
 	}
 
@@ -258,16 +326,15 @@ public class LocalStorageImplementation extends Storage {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		
 		if(obj instanceof StorageInformation) { 
-			path = storageInformation.getStorageDirectory().getAbsolutePath() + File.separator + StorageInformation.storageInformationJSONFileName;
+			path = StorageManager.getInstance().getStorageInformation().getStorageDirectory().getAbsolutePath() + File.separator + StorageInformation.storageInformationJSONFileName;
 		
-			
-			storageInformation.setCurrentDirectory(storageInformation.getStorageDirectory());
-			storageInformation.dismantleStorageTreeStructure();
+			StorageManager.getInstance().getStorageInformation().setCurrentDirectory(StorageManager.getInstance().getStorageInformation().getDatarootDirectory());
+			StorageManager.getInstance().getStorageInformation().dismantleStorageTreeStructure();
 			jsonString = gson.toJson((StorageInformation) obj);
-			storageInformation.buildStorageTreeStructure();
+			StorageManager.getInstance().getStorageInformation().buildStorageTreeStructure();
 		}
 		else if(obj instanceof StorageConfiguration) {
-			path = storageInformation.getStorageDirectory().getAbsolutePath() + File.separator + StorageInformation.configJSONFileName;
+			path = StorageManager.getInstance().getStorageInformation().getStorageDirectory().getAbsolutePath() + File.separator + StorageInformation.configJSONFileName;
 			jsonString = gson.toJson((StorageConfiguration) obj);	
 		}
 		
@@ -301,11 +368,11 @@ public class LocalStorageImplementation extends Storage {
 		try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
 		
 			if(obj instanceof StorageInformation) {
-				storageManager.setStorageInformation(gson.fromJson(reader, StorageInformation.class));
-				storageManager.getStorageInformation().buildStorageTreeStructure();
+				StorageManager.getInstance().setStorageInformation(gson.fromJson(reader, StorageInformation.class));
+				StorageManager.getInstance().getStorageInformation().buildStorageTreeStructure();
 			}
 			else if(obj instanceof StorageConfiguration) 
-				storageManager.setStorageConfiguration(gson.fromJson(reader, StorageConfiguration.class));
+				StorageManager.getInstance().setStorageConfiguration(gson.fromJson(reader, StorageConfiguration.class));
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -313,5 +380,4 @@ public class LocalStorageImplementation extends Storage {
 		
 		
 	}
-
 }
