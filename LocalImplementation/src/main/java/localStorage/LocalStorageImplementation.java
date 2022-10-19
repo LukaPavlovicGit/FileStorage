@@ -5,9 +5,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import org.apache.commons.io.FileUtils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -20,6 +21,7 @@ import exception.PathException;
 import exception.StorageException;
 import exception.StorageSizeException;
 import exception.UnsupportedFileException;
+import fileMetadata.FileMetadata;
 import specification.Storage;
 import storageInformation.StorageInformation;
 import storageManager.StorageManager;
@@ -78,54 +80,179 @@ public class LocalStorageImplementation extends Storage {
 			storageManager.setStorageConfiguration(storageConfiguration);
 		
 		super.createStorageTreeStructure(dest);
+		
+		saveToJSON(storageInformation);
+		saveToJSON(storageConfiguration);
 	}
 
 	@Override
-	public void connectToStorage(String src) {
+	public void connectToStorage(String src) throws NotFound, StorageException {
+		
+		Path path = Paths.get(src);
+		
+		File sourceDirectory = new File(path.toString());
+		if(!sourceDirectory.exists())
+			throw new NotFound("Given destination does not exist!");
+		
+		int numOfDefaultFiles = 0;
+		
+		for(String fName : sourceDirectory.list()) {
+			if( fName.equals(StorageInformation.storageInformationJSONFileName) ||
+				fName.equals(StorageInformation.datarootDirName) ||
+				fName.equals(StorageInformation.configJSONFileName) ) {
+				
+				if(++numOfDefaultFiles == 3)
+					break;
+			}
+		}
+		
+		if(numOfDefaultFiles < 3)
+			throw new StorageException("Given path does not represent the storage!");
+		
+		readFromJSON(new StorageInformation(), src);
+		readFromJSON(new StorageConfiguration(), src);
+	}
+
+	@Override
+	public boolean createDirectory(String dest, Integer... filesLimit) { // throws StorageSizeException, NamingPolicyException, DirectoryException
+		
+		try {
+		
+			FileMetadata fileMetadata = new FileMetadata();
+			fileMetadata.setDirectory(true);
+			fileMetadata.setNumOfFilesLimit( filesLimit.length>0 ? filesLimit[0] : null );
+			super.addFileMetadataToStorage(dest, fileMetadata);
+		
+		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		
+		String storagePathPrefix = storageInformation.getStoragePathPrefix();
+		if(!dest.startsWith(storagePathPrefix))
+			dest = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + dest;
+		
+		Path path = Paths.get(dest);
+		new File(path.toString()).mkdir();
+		
+		return true;
+	}
+
+	@Override
+	public boolean createFile(String dest) {
+		
+		String storagePathPrefix = storageInformation.getStoragePathPrefix();
+		if(!dest.startsWith(storagePathPrefix))
+			dest = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + dest;
+		
+		try {
+			
+			FileMetadata fileMetadata = new FileMetadata();
+			fileMetadata.setFile(true);
+			super.addFileMetadataToStorage(dest, fileMetadata);
+		
+		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		
+		try {
+			
+			Path path = Paths.get(dest);
+			new File(path.toString()).createNewFile();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return true;
+		
+	}
+
+	@Override
+	public void move(String filePath, String newDest) {
+		
+		String storagePathPrefix = storageInformation.getStoragePathPrefix();
+		
+		if(!filePath.startsWith(storagePathPrefix))
+			filePath = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
+		if(!newDest.startsWith(storagePathPrefix))
+			newDest = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + newDest;
+		
+
+		try {
+			
+			super.moveFileMetadata(filePath, newDest);
+			FileUtils.moveToDirectory(new File(filePath), new File(newDest), false);
+			
+		} catch (DirectoryException | NotFound | IOException e) {
+			e.printStackTrace();
+		}
+		
+		
+	}
+
+	@Override
+	public void remove(String filePath){
+		
+		String storagePathPrefix = storageInformation.getStoragePathPrefix();
+		
+		if(!filePath.startsWith(storagePathPrefix))
+			filePath = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
+		
+		try {
+			
+			super.removeFileMetadataFromStorage(filePath);
+			
+		} catch (NotFound e) {
+			e.printStackTrace();
+		}
+		
+		remove(new File(filePath));
+		
+	}
+	
+	private void remove(File file) {
+		
+		if(file.isFile()) {
+			file.delete();
+			return;
+		}
+		
+		for(File f : file.listFiles()) {
+			remove(f);
+		}
+		
+		file.delete();
+	}
+
+	@Override
+	public void rename(String filePath, String newName) throws NotFound, NamingPolicyException {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public boolean createDirectory(String dest, String name, Integer... filesLimit)
-			throws StorageSizeException, NamingPolicyException, DirectoryException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean createFile(String dest, String name)
-			throws StorageSizeException, NamingPolicyException, UnsupportedFileException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void move(String name, String src, String newDest) throws NotFound {
+	public void download(String filePath, String downloaDest) throws NotFound {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
-	public void remove(String name, String src) throws NotFound {
+	public void copyFile(String filePath, String dest) {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
-	public void rename(String newName, String name, String src) throws NotFound, NamingPolicyException {
-		// TODO Auto-generated method stub
+	public void writeToFile(String filePath, String text) {
 		
-	}
-
-	@Override
-	public void download(String name, String src, String dest) throws NotFound {
-		// TODO Auto-generated method stub
-		
+	
 	}
 
 	@Override
 	public void saveToJSON(Object obj) {
+		
 		String path = null;
 		String jsonString = null;
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -133,6 +260,8 @@ public class LocalStorageImplementation extends Storage {
 		if(obj instanceof StorageInformation) { 
 			path = storageInformation.getStorageDirectory().getAbsolutePath() + File.separator + StorageInformation.storageInformationJSONFileName;
 		
+			
+			storageInformation.setCurrentDirectory(storageInformation.getStorageDirectory());
 			storageInformation.dismantleStorageTreeStructure();
 			jsonString = gson.toJson((StorageInformation) obj);
 			storageInformation.buildStorageTreeStructure();
@@ -156,21 +285,20 @@ public class LocalStorageImplementation extends Storage {
 	}
 
 	@Override
-	public void readFromJSON(Object obj) {
+	public void readFromJSON(Object obj, String src) {
 		
 		String path = null;
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		
 		if(obj instanceof StorageInformation) 
-			path = storageInformation.getStorageDirectory().getAbsolutePath() + File.separator + StorageInformation.storageInformationJSONFileName;
+			path = src + File.separator + StorageInformation.storageInformationJSONFileName;
 		else if(obj instanceof StorageConfiguration)
-			path = storageInformation.getStorageDirectory().getAbsolutePath() + File.separator + StorageInformation.configJSONFileName;
+			path = src + File.separator + StorageInformation.configJSONFileName;
 	
 		if(path == null)
 			return;
 		
 		try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
-		
 		
 			if(obj instanceof StorageInformation) {
 				storageManager.setStorageInformation(gson.fromJson(reader, StorageInformation.class));
@@ -179,7 +307,6 @@ public class LocalStorageImplementation extends Storage {
 			else if(obj instanceof StorageConfiguration) 
 				storageManager.setStorageConfiguration(gson.fromJson(reader, StorageConfiguration.class));
 
-			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
