@@ -12,7 +12,7 @@ import fileMetadata.FileMetadata;
 
 public class StorageInformation {
 	
-	public static final String downloadFileName = "download";
+	public static final String downloadFileName = "downloads";
 	public static final String datarootDirName = "dataRootDirectory";
 	public static final String configJSONFileName = "configuration.json";
 	public static final String storageInformationJSONFileName = "storageInformation.json";

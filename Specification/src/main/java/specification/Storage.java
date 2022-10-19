@@ -30,20 +30,20 @@ import fileMetadata.FileMetadata.FileMetadataBuilder;
 import storageInformation.StorageInformation;
 import storageManager.StorageManager;
 
-public abstract class Storage<T> {
+public abstract class Storage {
 	
 	public abstract void createStorage(String dest, StorageConfiguration storageConfiguration) throws StorageException, NamingPolicyException, PathException;
 	
-	public abstract void connectToStorage(String src) throws NotFound;
+	public abstract void connectToStorage(String src) throws NotFound, StorageException;
 	
-	public abstract boolean createDirectory(String dest, String name, Integer... filesLimit) throws StorageSizeException, NamingPolicyException, DirectoryException;
+	public abstract boolean createDirectory(String dest, Integer... filesLimit) throws StorageSizeException, NamingPolicyException, DirectoryException;
 	
 	public void createDirectories(String dest, Map<String, Integer> dirNameAndFilesLimit) {
 		try {
 			
 			for(String name : dirNameAndFilesLimit.keySet()) {
 				Integer filesLimit = dirNameAndFilesLimit.get(name);
-				createDirectory(dest, name, filesLimit);		
+				createDirectory(dest + File.separator + name, filesLimit);		
 			}
 			
 		} catch (StorageSizeException | DirectoryException | NamingPolicyException e) {
@@ -51,13 +51,13 @@ public abstract class Storage<T> {
 		}
 	}
 	
-	public abstract boolean createFile(String dest, String name) throws StorageSizeException, NamingPolicyException, UnsupportedFileException;
+	public abstract boolean createFile(String dest) throws StorageSizeException, NamingPolicyException, UnsupportedFileException;
 	
 	public void createFiles(String dest, List<String> names) {
 		try {
 		
 			for(String name : names) {
-				createFile(dest, name);
+				createFile(dest + File.separator + name);
 			}
 		
 		} catch (StorageSizeException | NamingPolicyException | UnsupportedFileException e) {	
@@ -66,19 +66,21 @@ public abstract class Storage<T> {
 		
 	}
 	
-	public abstract void move(String name, String src, String newDest) throws NotFound;
+	public abstract void move(String filePath, String newDest) throws NotFound, DirectoryException;
 	
-	public abstract void remove(String name, String src) throws NotFound;
+	public abstract void remove(String filePath) throws NotFound;
 	
-	public abstract void rename(String newName, String name, String src) throws NotFound, NamingPolicyException;
+	public abstract void rename(String filePath, String newName) throws NotFound, NamingPolicyException;
 	
-	public abstract void download(String name, String src, String dest) throws NotFound;
+	public abstract void download(String filePath, String downloaDest) throws NotFound;
 	
-	// za konfuguraciju i strorageTreeStructure
+	public abstract void copyFile(String filePath, String dest);
+	
+	public abstract void writeToFile(String filePath, String text);
+	
 	public abstract void saveToJSON(Object obj);
 	
-	// za konfuguraciju i strorageTreeStructure
-	public abstract void readFromJSON(Object obj);
+	public abstract void readFromJSON(Object obj, String path);
 	
 	public void changeDirectory(String dest) throws NotFound {
 		
@@ -88,7 +90,7 @@ public abstract class Storage<T> {
 		Path p = Paths.get(dest);
 		
 		if(dest.equals("cd..")) {
-			if(currentDirectory.getDepthInTreeStructure() == 0)
+			if(currentDirectory.isStorage())
 				return;
 			
 			FileMetadata parent = storageInformation.getCurrentDirectory().getParent();
@@ -185,7 +187,6 @@ public abstract class Storage<T> {
 		}
 		if(sufix.length()>0)
 			subWord = null;
-		
 		
 		Map<FileMetadata, List<FileMetadata>> result = new HashMap<>();
 		Queue<FileMetadata> pq = new PriorityQueue<>();
@@ -314,13 +315,11 @@ public abstract class Storage<T> {
 		}
 		// atributes[0] = "fileID"
 		// atributes[1] = "name"
-		// atributes[2] = "extension"
-		// atributes[3] = "parentName"
-		// atributes[4] = "absolutePath"
-		// atributes[5] = "timeCreated"
-		// atributes[6] = "fimeModified"
-		// atributes[7] = "isFile"
-		// atributes[8] = "isDirectory"
+		// atributes[2] = "absolutePath"
+		// atributes[3] = "timeCreated"
+		// atributes[4] = "fimeModified"
+		// atributes[5] = "isFile"
+		// atributes[6] = "isDirectory"
 		
 		for(FileMetadata dir : result.keySet()) {
 			
@@ -346,18 +345,14 @@ public abstract class Storage<T> {
 				if(atributes[1])
 					builder.withName(f.getName());
 				if(atributes[2])
-					builder.withExtension(f.getExtension());
-				if(atributes[3])
-					builder.withParentName(f.getParentName());
-				if(atributes[4])
 					builder.withAbsolutePath(f.getAbsolutePath());
-				if(atributes[5])
+				if(atributes[3])
 					builder.withTimeCreated(f.getTimeCreated());
-				if(atributes[6])
+				if(atributes[4])
 					builder.withTimeModified(f.getTimeModified());
-				if(atributes[7])
+				if(atributes[5])
 					builder.withIsFile(f.isFile());
-				if(atributes[8])
+				if(atributes[6])
 					builder.withIsDirectory(f.isDirectory());
 				
 				
@@ -378,61 +373,60 @@ public abstract class Storage<T> {
 		Path path = Paths.get(dest);
 
 		FileMetadata storage = new FileMetadataBuilder()
-			 				.withFileID(storageInformation.getStorageDirectoryID())
-			 				.withName(path.getFileName().toString())
-			 				.withAbsolutePath(dest)
-			 				.withTimeCreated(new Date())
-			 				.withTimeModified(new Date())
-			 				.withIsDirectory(true)
-			 				.withIsStorage(true)
-			 				.withStorageSize(storageConfiguration.getStorageSize())
-			 				.withUnsupportedFiles(storageConfiguration.getUnsupportedFiles())
-			 				.build();
+			.withFileID(storageInformation.getStorageDirectoryID())
+			.withName(path.getFileName().toString())
+			.withAbsolutePath(dest)
+			.withTimeCreated(new Date())
+			.withTimeModified(new Date())
+			.withIsDirectory(true)
+			.withIsStorage(true)
+			.withStorageSize(storageConfiguration.getStorageSize())
+			.withUnsupportedFiles(storageConfiguration.getUnsupportedFiles())
+			.build();
 		
 		FileMetadata dataRoot = new FileMetadataBuilder()
-							.withFileID(storageInformation.getDatarootDirectoryID())
-							.withName(StorageInformation.datarootDirName)
-							.withAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.datarootDirName)
-							.withParent(storage)
-							.withTimeCreated(new Date())
-							.withTimeModified(new Date())
-							.withIsDirectory(true)
-							.withIsDataRoot(true)
-							.build();
+			.withFileID(storageInformation.getDatarootDirectoryID())
+			.withName(StorageInformation.datarootDirName)
+			.withAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.datarootDirName)
+			.withParent(storage)
+			.withTimeCreated(new Date())
+			.withTimeModified(new Date())
+			.withIsDirectory(true)
+			.withIsDataRoot(true)
+			.build();
 							
 		FileMetadata configJSONfile = new FileMetadataBuilder()
-							.withFileID(storageInformation.getConfigJSOnID())
-							.withName(StorageInformation.configJSONFileName)
-							.withAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.configJSONFileName)
-							.withParent(storage)
-							.withTimeCreated(new Date())
-							.withTimeModified(new Date())
-							.withIsFile(true)
-							.withIsConfigJSONFile(true)
-							.build();
-				
+			.withFileID(storageInformation.getConfigJSOnID())
+			.withName(StorageInformation.configJSONFileName)
+			.withAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.configJSONFileName)
+			.withParent(storage)
+			.withTimeCreated(new Date())
+			.withTimeModified(new Date())
+			.withIsFile(true)
+			.withIsConfigJSONFile(true)
+			.build();
+	
 		FileMetadata strorageInformationJSONfile = new FileMetadataBuilder()
-							.withFileID(storageInformation.getStorageTreeStructureJSOnID())
-							.withName(StorageInformation.storageInformationJSONFileName)
-							.withAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.storageInformationJSONFileName)
-							.withParent(storage)
-							.withTimeCreated(new Date())
-							.withTimeModified(new Date())
-							.withIsFile(true)
-							.withIsStrorageTreeStructureJSONFile(true)
-							.build();
+			.withFileID(storageInformation.getStorageTreeStructureJSOnID())
+			.withName(StorageInformation.storageInformationJSONFileName)
+			.withAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.storageInformationJSONFileName)
+			.withParent(storage)
+			.withTimeCreated(new Date())
+			.withTimeModified(new Date())
+			.withIsFile(true)
+			.withIsStrorageTreeStructureJSONFile(true)
+			.build();
 		
 		FileMetadata downloads = new FileMetadataBuilder()
-							.withFileID(storageInformation.getDownloadFileID())
-							.withName(StorageInformation.downloadFileName)
-							.withAbsolutePath(storage + File.separator + StorageInformation.downloadFileName)
-							.withParent(storage)
-							.withTimeCreated(new Date())
-							.withTimeModified(new Date())
-							.withIsFile(true)
-							.withIsDownloadFile(true)
-							.build();
-	 
+			.withFileID(storageInformation.getDownloadFileID())
+			.withName(StorageInformation.downloadFileName)
+			.withAbsolutePath(storage + File.separator + StorageInformation.downloadFileName)
+			.withParent(storage)
+			.withTimeCreated(new Date())
+			.withTimeModified(new Date())
+			.withIsFile(true)
+			.withIsDownloadFile(true)
+			.build();
 
 		
 		List<FileMetadata> storageAdjacent = new ArrayList<FileMetadata>();
@@ -449,27 +443,39 @@ public abstract class Storage<T> {
 		storageInformation.setStorageInformationJSONfile(strorageInformationJSONfile);
 		storageInformation.setCurrentDirectory(dataRoot);
 		storageInformation.setDownloadFile(downloads);
-		
-		saveToJSON(storageInformation);
-		
+				
 		return true;
 	}
-	
-	// poziva se kada se konektujemo na postojeci storage
-	protected boolean raiseStrorageTreeStructure(String jsonFormat) {
 		
-		return true;
-	}
-	
-	protected boolean addFileMetadataToStorage(String dst, FileMetadata fileMetadata) throws NotFound {
+	// kada se poziva iz drive implementacije, fileMetadata treba da ima podesen fileID !!!!!!
+	// ako postoji numOfFilesLimit za direktorijum onda se u obe implementacije treba podestiti pre nego sto se posalje u specifikaciju
+	// atribute isDirectory i isFile takodje treba da budu podeseni pre prosledjivanja
+	protected boolean addFileMetadataToStorage(String dst, FileMetadata fileMetadata) 
+			throws NotFound, NamingPolicyException, StorageSizeException, DirectoryException, UnsupportedFileException {
 		
 		Path path = Paths.get(dst);
+		String name = path.getFileName().toString();
+		path = path.getParent();
+		
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<FileMetadata, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();
-		FileMetadata currentDirectory = storageInformation.getCurrentDirectory();
-		String storagePathPrefix = storageInformation.getStoragePathPrefix();
+		FileMetadata storage = StorageManager.getInstance().getStorageInformation().getStorageDirectory();
 		
-		FileMetadata startFromDirectory = currentDirectory;
+		if(storage.getStorageSize() != null) {
+			if(storage.getStorageSize() < 1)
+				throw new StorageSizeException("Storage size limit has been reached!");
+		}
+		
+		if(fileMetadata.isFile() && !storage.getUnsupportedFiles().isEmpty()) {
+			for(String extension : storage.getUnsupportedFiles()) {
+				if(name.endsWith(extension))
+					throw new UnsupportedFileException("Unsupported file!");
+			}
+		}
+		
+		String storagePathPrefix = storageInformation.getStoragePathPrefix();
+		FileMetadata startFromDirectory = storageInformation.getCurrentDirectory();
+		
 		if(dst.startsWith(storagePathPrefix))
 			startFromDirectory =  storageInformation.getStorageDirectory();
 		
@@ -477,7 +483,24 @@ public abstract class Storage<T> {
 		if(parent == null)
 			throw new NotFound("Path is not correct!");
 		
-		fileMetadata.setAbsolutePath(parent.getAbsolutePath() + File.separator + fileMetadata.getName());
+		if(parent.getNumOfFilesLimit() != null) {
+			if(parent.getNumOfFilesLimit() < 1)
+				throw new DirectoryException("Number of files limit has been reached!");
+			
+			parent.setNumOfFilesLimit(parent.getNumOfFilesLimit() - 1);
+		}
+		
+		for(FileMetadata f : storageTreeStracture.get(parent)) {
+			if(f.getName().equals(fileMetadata.getName()))
+				throw new NamingPolicyException("File with a such name already exist. Choose a different name!");
+		}
+		
+		fileMetadata.setName(path.getFileName().toString());
+		fileMetadata.setAbsolutePath(parent.getAbsolutePath() + File.separator + name);
+		fileMetadata.setParent(parent);
+		fileMetadata.setTimeCreated(new Date());
+		fileMetadata.setTimeModified(new Date());
+		
 		storageTreeStracture.get(parent).add(fileMetadata);
 		
 		return true;
@@ -489,9 +512,10 @@ public abstract class Storage<T> {
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<FileMetadata, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();
 		FileMetadata currentDirectory = storageInformation.getCurrentDirectory();
-		String storagePathPrefix = storageInformation.getStoragePathPrefix();
 		
+		String storagePathPrefix = storageInformation.getStoragePathPrefix();
 		FileMetadata startFromDirectory = currentDirectory;
+		
 		if(filePath.startsWith(storagePathPrefix))
 			startFromDirectory =  storageInformation.getStorageDirectory();
 			
@@ -505,7 +529,7 @@ public abstract class Storage<T> {
 		return true;
 	}
 	
-	protected boolean moveFileMetadata(String filePath, String newDest) throws NotFound {
+	protected boolean moveFileMetadata(String filePath, String newDest) throws NotFound, DirectoryException {
 		
 		Path path1 = Paths.get(filePath);
 		Path path2 = Paths.get(newDest);
@@ -527,6 +551,21 @@ public abstract class Storage<T> {
 			throw new NotFound("File path not correct!");
 		if(dest == null)
 			throw new NotFound("Destination path not correct!");
+		
+		if(dest.getNumOfFilesLimit() != null) {
+			if(dest.getNumOfFilesLimit() < 1)
+				throw new DirectoryException("Number of files limit has been reached!");
+			
+			dest.setNumOfFilesLimit(dest.getNumOfFilesLimit() - 1);
+		}
+		
+		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se premesta
+		for(FileMetadata f : storageTreeStracture.get(dest)) {
+			if(f.getName().startsWith(file.getName()) && f.getName().endsWith(file.getName())) {
+				file.setName(file.getName() + "*");
+				break;
+			}
+		}
 			
 		storageTreeStracture.get(file.getParent()).remove(file);
 		storageTreeStracture.get(dest).add(file);
@@ -555,7 +594,7 @@ public abstract class Storage<T> {
 		return true;
 	}
 	
-	private FileMetadata getLastDirectoryOnPath(Iterator<Path> iterator, FileMetadata directory, final Map<FileMetadata, List<FileMetadata>> storageTreeStracture) {
+	protected FileMetadata getLastDirectoryOnPath(Iterator<Path> iterator, FileMetadata directory, final Map<FileMetadata, List<FileMetadata>> storageTreeStracture) {
 		
 		if(!iterator.hasNext())
 			return directory;

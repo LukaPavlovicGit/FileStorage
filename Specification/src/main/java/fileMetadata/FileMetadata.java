@@ -10,8 +10,6 @@ public class FileMetadata {
 	
 	private String fileID;
 	private String name;
-	private String extension;
-	private String parentName;
 	private String absolutePath;
 	private FileMetadata parent;
 	private Date timeCreated;
@@ -23,7 +21,6 @@ public class FileMetadata {
 	private boolean isDataRoot;
 	private boolean isConfigJSONFile;
 	private boolean isStrorageTreeStructureJSONFile;
-	private Integer depthInTreeStructure;
 	
 	//if directory
 	private Integer numOfFilesLimit;
@@ -40,8 +37,6 @@ public class FileMetadata {
 	public FileMetadata(FileMetadataBuilder builder) {
 		this.fileID = builder.fileID;
 		this.name = builder.name;
-		this.extension = builder.extension;
-		this.parentName = builder.parentName;
 		this.timeCreated = builder.timeCreated;
 		this.timeModified = builder.timeModified;
 		this.absolutePath = builder.absolutePath;
@@ -53,7 +48,6 @@ public class FileMetadata {
 		this.isDataRoot = builder.isDataRoot;
 		this.isConfigJSONFile = builder.isConfigJSONFile;
 		this.isStrorageTreeStructureJSONFile = builder.isStrorageTreeStructureJSONFile;
-		this.depthInTreeStructure = builder.depthInTreeStructure;
 		
 		this.numOfFilesLimit = builder.numOfFilesLimit;
 		
@@ -76,18 +70,6 @@ public class FileMetadata {
 	}
 	public void setName(String name) {
 		this.name = name;
-	}
-	public String getExtension() {
-		return extension;
-	}
-	public void setExtension(String extension) {
-		this.extension = extension;
-	}
-	public String getParentName() {
-		return parentName;
-	}
-	public void setParentName(String parentName) {
-		this.parentName = parentName;
 	}
 	public Date getTimeCreated() {
 		return timeCreated;
@@ -201,14 +183,6 @@ public class FileMetadata {
 	public void setConfigJSONFile(boolean isConfigJSONFile) {
 		this.isConfigJSONFile = isConfigJSONFile;
 	}
-
-	public Integer getDepthInTreeStructure() {
-		return depthInTreeStructure;
-	}
-
-	public void setDepthInTreeStructure(Integer depthInTreeStructure) {
-		this.depthInTreeStructure = depthInTreeStructure;
-	}
 	
 	public FileMetadata clone() {
 		FileMetadata file = new FileMetadata();
@@ -223,8 +197,6 @@ public class FileMetadata {
 		final int maxLen = 22;
 		return "FileMetadata [" + (fileID != null ? "fileID=" + fileID + ", " : "")
 				+ (name != null ? "name=" + name + ", " : "")
-				+ (extension != null ? "extension=" + extension + ", " : "")
-				+ (parentName != null ? "parentName=" + parentName + ", " : "")
 				+ (absolutePath != null ? "absolutePath=" + absolutePath + ", " : "")
 				+ (parent != null ? "parent=" + parent + ", " : "")
 				+ (timeCreated != null ? "timeCreated=" + timeCreated + ", " : "")
@@ -232,7 +204,6 @@ public class FileMetadata {
 				+ ", isDirectory=" + isDirectory + ", isStorage=" + isStorage + ", isDataRoot=" + isDataRoot
 				+ ", isConfigJSONFile=" + isConfigJSONFile + ", isStrorageTreeStructureJSONFile="
 				+ isStrorageTreeStructureJSONFile + ", "
-				+ (depthInTreeStructure != null ? "depthInTreeStructure=" + depthInTreeStructure + ", " : "")
 				+ (numOfFilesLimit != null ? "numOfFilesLimit=" + numOfFilesLimit + ", " : "")
 				+ (storageSize != null ? "storageSize=" + storageSize + ", " : "")
 				+ (unsupportedFiles != null ? "unsupportedFiles=" + toString(unsupportedFiles, maxLen) : "") + "]";
@@ -258,8 +229,6 @@ public class FileMetadata {
 		
 		private String fileID;
 		private String name;
-		private String extension;
-		private String parentName;
 		private String absolutePath;
 		private FileMetadata parent;
 		private Date timeCreated;
@@ -271,7 +240,6 @@ public class FileMetadata {
 		private boolean isDataRoot;
 		private boolean isConfigJSONFile;
 		private boolean isStrorageTreeStructureJSONFile;
-		private Integer depthInTreeStructure;
 		
 		//if directory
 		private Integer numOfFilesLimit;
@@ -284,17 +252,8 @@ public class FileMetadata {
 			this.fileID = ID;
 			return this;
 		}
-		
 		public FileMetadataBuilder withName(String name) {
 			this.name = name;
-			return this;
-		}
-		public FileMetadataBuilder withExtension(String extension) {
-			this.extension = extension;
-			return this;
-		}
-		public FileMetadataBuilder withParentName(String parentName) {
-			this.parentName = parentName;
 			return this;
 		}
 		public FileMetadataBuilder withTimeCreated(Date timeCreated) {
@@ -339,10 +298,6 @@ public class FileMetadata {
 		}
 		public FileMetadataBuilder withIsStrorageTreeStructureJSONFile(boolean isStrorageTreeStructureJSONFile) {
 			this.isStrorageTreeStructureJSONFile = isStrorageTreeStructureJSONFile;
-			return this;
-		}
-		public FileMetadataBuilder withDepthInTreeStructure(Integer depthInTreeStrucure) {
-			this.depthInTreeStructure = depthInTreeStrucure;
 			return this;
 		}
 		public FileMetadataBuilder withNumOfFilesLimit(Integer num) {

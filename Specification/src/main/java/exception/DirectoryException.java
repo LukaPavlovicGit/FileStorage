@@ -1,9 +1,7 @@
 package exception;
 
-import java.io.IOException;
-
 @SuppressWarnings("serial")
-public class DirectoryException extends IOException {
+public class DirectoryException extends Exception {
 
 	public DirectoryException(String msg) {
 		super(msg);
