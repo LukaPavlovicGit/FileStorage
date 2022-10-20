@@ -39,19 +39,10 @@ public class CommandLine {
 	        System.out.println("If you want to quit application, please type command exit");
 	        
 	        while(true) {
-	        	command = scanner.nextLine();
 	        	
-	        	
-	        	if (command.equals("exit")) {
-	                return;
-	            }
-
-	            if (command.equals("help")) {
-	                help();
-	                continue;
-	            }
-	        	
+	        	command = scanner.nextLine();	        	
 	            String[] commArray = command.split(" ");
+	            
 	            try {
 	            	
 	            	if(commArray.length == 2 && commArray[0].equals("mkstrg")) {
@@ -238,12 +229,12 @@ public class CommandLine {
 		            		for(int i=0 ; i<subArr.length ; i++) {
 		            			
 		            			if(subArr[i].contains("-d")) onlyDirs = true;
-		            			if(subArr[i].contains("-f")) onleFiles = true;
-		            			if(subArr[i].contains("-ssd")) searchSubDirecories = true;
-		            			if(subArr[i].contains("-ex:")) ext = subArr[i].split("-ex:")[1];
-		            			if(subArr[i].contains("-p:")) pref = subArr[i].split("-p:")[1];
-		            			if(subArr[i].contains("-s:")) suf = subArr[i].split("-s:")[1];
-		            			if(subArr[i].contains("-sw:")) sub = subArr[i].split("-sw:")[1];
+		            			else if(subArr[i].contains("-f")) onleFiles = true;
+		            			else if(subArr[i].contains("-ssd")) searchSubDirecories = true;
+		            			else if(subArr[i].contains("-ex:")) ext = subArr[i].split("-ex:")[1];
+		            			else if(subArr[i].contains("-p:")) pref = subArr[i].split("-p:")[1];
+		            			else if(subArr[i].contains("-s:")) suf = subArr[i].split("-s:")[1];
+		            			else if(subArr[i].contains("-sw:")) sub = subArr[i].split("-sw:")[1];
 		            			
 		            		}		
 		            		
@@ -268,10 +259,10 @@ public class CommandLine {
 	            			
 	            			for(int i=0 ; i<subArr.length ; i++) {
 	            				if(subArr[i].contains("-n")) byName = true;
-	            				if(subArr[i].contains("-c")) byCreation = true;
-	            				if(subArr[i].contains("-m")) byModification = true;
-	            				if(subArr[i].contains("-asc")) asc = true;
-	            				if(subArr[i].contains("-desc")) desc = true;
+	            				else if(subArr[i].contains("-ct")) byCreation = true;
+	            				else if(subArr[i].contains("-mt")) byModification = true;
+	            				else if(subArr[i].contains("-asc")) asc = true;
+	            				else if(subArr[i].contains("-desc")) desc = true;
 	            			}
 	            			
 	            			resultSet = storage.resultSort(resultSet, byName, byCreation, byModification, asc, desc);
@@ -339,10 +330,134 @@ public class CommandLine {
 	            }catch (Exception e) {
 	            	System.out.println(e.getMessage());
 	            }
+	            	        		        	
+	        	if (command.equals("exit")) {
+	                return;
+	            }
+	        	
+	        	else if (command.equals("help")) {
+	               
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?mkstrg")) {
+	        		
+	        		System.out.println("Command examples:");
+	        		System.out.println("Command examples:");
+	        		
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?con")) {
+	              
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?discon")) {
+	                
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?mkdir")) {
+	                
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?mkdirs")) {
+	                
+	                continue;
+	            }
+
+	        	else if (command.equals("?mkfile")) {
+	               
+	                continue;
+	            }
+	        	else if (command.equals("?mkfiles")) {
+	               
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?move")) {
+	        		
+	        		continue;
+	            }
+	        	
+	        	else if (command.equals("?del")) {
+	                
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?rename")) {
+	               
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?download")) {
+	               
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?copy")) {
+	               
+	                continue;
+	            }
+
+	        	else if (command.equals("?write")) {
+	                
+	                continue;
+	            }
+	        	else if (command.equals("?cd")) {
+	                
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?hit")) {
+	                
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?hit -l")) {
+	              
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?dest")) {
+	               
+	                continue;
+	            }
+
+	        	else if (command.equals("?ls")) {
+	                
+	                continue;
+	            }
+	        	else if (command.equals("?sort")) {
+	                
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?fil")) {
+	               
+	                continue;
+	            }
+	        	
+	        	else if (command.equals("?dest")) {
+	                
+	                continue;
+	            }
+
+	        	else if (command.equals("commands")) {
+	                listCommands();
+	                continue;
+	            }
+	        	
+	        	else {
+	        		System.out.println("Commands is not recogized! Type 'commands' to se list of commands.");
+	        	}
+	            
 	        }
 	}
 
-	private static void help() {
+	private static void listCommands() {
 		// TODO Auto-generated method stub
 		
 	}
