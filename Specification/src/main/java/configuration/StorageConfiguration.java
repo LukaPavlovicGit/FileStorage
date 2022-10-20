@@ -15,6 +15,11 @@ public class StorageConfiguration {
 		
 	}
 	
+	public StorageConfiguration(Long storageSize, Set<String> unsupportedFiles) {
+		this.storageSize = storageSize;
+		this.unsupportedFiles = unsupportedFiles;
+	}
+
 	public StorageConfiguration(Long storageSize, Set<String> unsupportedFiles, Map<String, Integer> dirNumberOfFilesLimit) {
 		this.storageSize = storageSize;
 		this.unsupportedFiles = unsupportedFiles;

@@ -34,16 +34,17 @@ import storageManager.StorageManager;
 
 public abstract class Storage {
 	
-	public abstract void createStorage(String dest, StorageConfiguration storageConfiguration) 
-			throws StorageException, NamingPolicyException, PathException, StorageConnectionException;
+	public abstract boolean createStorage(String dest, StorageConfiguration storageConfiguration) 
+			throws StorageException, NamingPolicyException, PathException, StorageConnectionException; // mkstrg
 	
-	public abstract void connectToStorage(String src) throws NotFound, StorageException, StorageConnectionException;
+	public abstract boolean connectToStorage(String src) throws NotFound, StorageException, StorageConnectionException; // con
 	
-	public abstract void disconnectFromStorage();
+	public abstract boolean disconnectFromStorage(); // discon
 	
-	public abstract boolean createDirectory(String dest, Integer... filesLimit) throws StorageSizeException, NamingPolicyException, DirectoryException, StorageConnectionException;
+	public abstract boolean createDirectory(String dest, Integer... filesLimit) 
+			throws StorageSizeException, NamingPolicyException, DirectoryException, StorageConnectionException; // mkdir
 	
-	public void createDirectories(String dest, Map<String, Integer> dirNameAndFilesLimit) {
+	public void createDirectories(String dest, Map<String, Integer> dirNameAndFilesLimit) { //mkdirs
 		try {
 			
 			for(String name : dirNameAndFilesLimit.keySet()) {
@@ -56,9 +57,10 @@ public abstract class Storage {
 		}
 	}
 	
-	public abstract boolean createFile(String dest) throws StorageSizeException, NamingPolicyException, UnsupportedFileException, StorageConnectionException;
+	public abstract boolean createFile(String dest) 
+			throws StorageSizeException, NamingPolicyException, UnsupportedFileException, StorageConnectionException; // mkfile
 	
-	public void createFiles(String dest, List<String> names) {
+	public void createFiles(String dest, List<String> names) { // mkfiles
 		try {
 		
 			for(String name : names) {
@@ -71,23 +73,23 @@ public abstract class Storage {
 		
 	}
 	
-	public abstract void move(String filePath, String newDest) throws NotFound, DirectoryException, StorageConnectionException;
+	public abstract void move(String filePath, String newDest) throws NotFound, DirectoryException, StorageConnectionException; // move 
 	
-	public abstract void remove(String filePath) throws NotFound, StorageConnectionException;
+	public abstract void remove(String filePath) throws NotFound, StorageConnectionException; // del
 	
-	public abstract void rename(String filePath, String newName) throws NotFound, StorageConnectionException;
+	public abstract void rename(String filePath, String newName) throws NotFound, StorageConnectionException; // rename
 	
-	public abstract void download(String filePath, String downloaDest) throws NotFound, StorageConnectionException;
+	public abstract void download(String filePath, String downloadDest) throws NotFound, StorageConnectionException; // download
 	
-	public abstract void copyFile(String filePath, String dest) throws NotFound, StorageConnectionException;
+	public abstract void copyFile(String filePath, String dest) throws NotFound, StorageConnectionException; // copy
 	
-	public abstract void writeToFile(String filePath, String text, boolean append) throws NotFound, StorageSizeException, StorageConnectionException;
+	public abstract void writeToFile(String filePath, String text, boolean append) throws NotFound, StorageSizeException, StorageConnectionException; //write
 	
 	protected abstract void saveToJSON(Object obj);
 	
 	protected abstract void readFromJSON(Object obj, String path);
 	
-	public void changeDirectory(String dest) throws NotFound, StorageConnectionException {
+	public void changeDirectory(String dest) throws NotFound, StorageConnectionException { // cd
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -120,7 +122,7 @@ public abstract class Storage {
 			throw new NotFound("Location does not exist!");
 	}
 	
-	public boolean find(String filePath) throws StorageConnectionException {
+	public boolean find(String filePath) throws StorageConnectionException { // hit
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -138,7 +140,7 @@ public abstract class Storage {
 		return checkPath(path.iterator(), startFromDirectory, storageTreeStracture);
 	}
 	
-	public Map<String, Boolean> find(List<String> filePaths) throws StorageConnectionException {
+	public Map<String, Boolean> find(List<String> filePaths) throws StorageConnectionException { // hit -l
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -150,7 +152,7 @@ public abstract class Storage {
 		return result;
 	}
 	
-	public List<String> findDestinantions(String name) throws StorageConnectionException {
+	public List<String> findDestinantions(String name) throws StorageConnectionException { // dest
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -173,7 +175,7 @@ public abstract class Storage {
 	}
 	
 	public Map<FileMetadata, List<FileMetadata>> listDirectory(String src, boolean onlyDirs, boolean onlyFiles, boolean searchSubDirecories, 
-				String extension, String prefix, String sufix, String subWord) throws NotFound, StorageConnectionException {
+				String extension, String prefix, String sufix, String subWord) throws NotFound, StorageConnectionException { // ls
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -258,7 +260,7 @@ public abstract class Storage {
 	
 	
 	public Map<FileMetadata, List<FileMetadata>> resultSort(Map<FileMetadata, List<FileMetadata>> result, boolean byName, boolean byCreationDate, 
-			boolean byModificationDate, boolean ascending, boolean descending) throws StorageConnectionException{
+			boolean byModificationDate, boolean ascending, boolean descending) throws StorageConnectionException{ // sort
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -304,7 +306,7 @@ public abstract class Storage {
 	// atributes inicilalizovati na false ( Arrays.fill(atributes, Boolean.FALSE) )
 	
 	public Map<FileMetadata, List<FileMetadata>> resultFilter(Map<FileMetadata, List<FileMetadata>> result, boolean[] atributes, Date[][] periods) 
-			throws InvalidArgumentsExcpetion, StorageConnectionException{
+			throws InvalidArgumentsExcpetion, StorageConnectionException{ // filter
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
