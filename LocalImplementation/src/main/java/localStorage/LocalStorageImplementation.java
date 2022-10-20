@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 
@@ -16,7 +17,6 @@ import com.google.gson.GsonBuilder;
 import configuration.StorageConfiguration; 
 import exception.DirectoryException;
 import exception.NamingPolicyException;
-import exception.NotAllowedOperation;
 import exception.NotFound;
 import exception.PathException;
 import exception.StorageConnectionException;
@@ -37,9 +37,9 @@ public class LocalStorageImplementation extends Storage {
 	private LocalStorageImplementation() {
 		
 	}
-	
+	// onemoguciti da se u okviru storege-a pravi drugi storage
 	@Override
-	public void createStorage(String dest, StorageConfiguration storageConfiguration) 
+	public boolean createStorage(String dest, StorageConfiguration storageConfiguration) 
 			throws StorageException, NamingPolicyException, PathException, StorageConnectionException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
@@ -81,12 +81,14 @@ public class LocalStorageImplementation extends Storage {
 		if(storageConfiguration != null)
 			StorageManager.getInstance().setStorageConfiguration(storageConfiguration);
 		
-		super.createStorageTreeStructure(dest);
+		createStorageTreeStructure(dest);
 		StorageManager.getInstance().getStorageInformation().setStorageConnected(true);
+		
+		return true;
 	}
 
 	@Override
-	public void connectToStorage(String src) throws NotFound, StorageException, StorageConnectionException {
+	public boolean connectToStorage(String src) throws NotFound, StorageException, StorageConnectionException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
 			throw new StorageConnectionException("Disconnection from the current storage is requiered in order to connect to new one!");
@@ -115,18 +117,21 @@ public class LocalStorageImplementation extends Storage {
 		readFromJSON(new StorageInformation(), src);
 		readFromJSON(new StorageConfiguration(), src);
 		StorageManager.getInstance().getStorageInformation().setStorageConnected(true);
+		
+		return true;
 	}
 	
 	@Override
-	public void disconnectFromStorage() {
+	public boolean disconnectFromStorage() {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
-			return;
+			return true;
 		
 		saveToJSON(new StorageInformation());
 		saveToJSON(new StorageConfiguration());
 		StorageManager.getInstance().getStorageInformation().setStorageConnected(false);
 		
+		return true;
 	}
 
 	@Override
@@ -140,7 +145,7 @@ public class LocalStorageImplementation extends Storage {
 			FileMetadata fileMetadata = new FileMetadata();
 			fileMetadata.setDirectory(true);
 			fileMetadata.setNumOfFilesLimit( filesLimit.length>0 ? filesLimit[0] : null );
-			super.addFileMetadataToStorage(dest, fileMetadata);
+			addFileMetadataToStorage(dest, fileMetadata);
 		
 		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException e) {
 			System.out.println(e.getMessage());
@@ -150,6 +155,11 @@ public class LocalStorageImplementation extends Storage {
 		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 		if(!dest.startsWith(storagePathPrefix))
 			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest;
+		
+		if(filesLimit.length>0) {
+			Map<String, Integer> map = StorageManager.getInstance().getStorageConfiguration().getDirNumberOfFilesLimit();
+			map.put(dest, filesLimit[0]);
+		}
 		
 		Path path = Paths.get(dest);
 		new File(path.toString()).mkdir();
@@ -171,11 +181,10 @@ public class LocalStorageImplementation extends Storage {
 			
 			FileMetadata fileMetadata = new FileMetadata();
 			fileMetadata.setFile(true);
-			super.addFileMetadataToStorage(dest, fileMetadata);
+			addFileMetadataToStorage(dest, fileMetadata);
 		
 		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException e) {
 			System.out.println(e.getMessage());
-			e.printStackTrace();
 		}
 		
 		try {
@@ -184,7 +193,7 @@ public class LocalStorageImplementation extends Storage {
 			new File(path.toString()).createNewFile();
 			
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 		
 		return true;
@@ -205,11 +214,11 @@ public class LocalStorageImplementation extends Storage {
 		
 		try {
 			
-			super.moveFileMetadata(filePath, newDest);
+			moveFileMetadata(filePath, newDest);
 			FileUtils.moveToDirectory(new File(filePath), new File(newDest), false);
 			
 		} catch (DirectoryException | NotFound | IOException e) {
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 	}
 
@@ -226,10 +235,10 @@ public class LocalStorageImplementation extends Storage {
 		
 		try {
 			
-			super.removeFileMetadataFromStorage(filePath);
+			removeFileMetadataFromStorage(filePath);
 			
 		} catch (NotFound e) {
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 		
 		remove(new File(filePath));
@@ -272,7 +281,7 @@ public class LocalStorageImplementation extends Storage {
 			FileUtils.moveToDirectory(new File(oldDest.toString()), new File(newDest.toString()), false);
 			
 		} catch (NotFound | IOException e) {
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 	}
 
@@ -298,7 +307,7 @@ public class LocalStorageImplementation extends Storage {
 		try {
 			FileUtils.copyToDirectory(new File(srcPath.toString()), new File(destPath.toString()));
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 	}
 	
@@ -310,10 +319,10 @@ public class LocalStorageImplementation extends Storage {
 		
 		try {
 			
-			super.copyFileMetadata(filePath, dest);
+			copyFileMetadata(filePath, dest);
 		
 		} catch (StorageSizeException | NotFound | DirectoryException e) {
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 		
 		Path srcPath = Paths.get(filePath);
@@ -331,7 +340,7 @@ public class LocalStorageImplementation extends Storage {
 			FileUtils.copyToDirectory(new File(srcPath.toString()), new File(destPath.toString()));
 		
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 	}
 	
@@ -364,7 +373,7 @@ public class LocalStorageImplementation extends Storage {
 			fileOut.write(text);
 	    
 		} catch (Exception e) {
-	        e.printStackTrace();
+			System.out.println(e.getMessage());
 	    }
 		
 	}
@@ -397,7 +406,7 @@ public class LocalStorageImplementation extends Storage {
 			fileOut.write(jsonString);
 	    
 		} catch (Exception e) {
-	        e.printStackTrace();
+			System.out.println(e.getMessage());
 	    }
 	
 	}
@@ -426,7 +435,7 @@ public class LocalStorageImplementation extends Storage {
 				StorageManager.getInstance().setStorageConfiguration(gson.fromJson(reader, StorageConfiguration.class));
 
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
 		
 		
