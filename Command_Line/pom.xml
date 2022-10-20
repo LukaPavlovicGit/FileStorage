@@ -3,4 +3,69 @@
   <groupId>raf.edu.componente</groupId>
   <artifactId>Command_Line</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  
+  <dependencies>
+  	<dependency>
+	  <groupId>raf.edu.componente</groupId>
+	  <artifactId>Specification</artifactId>
+	  <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    
+    <dependency>
+	  <groupId>raf.edu.componente</groupId>
+	  <artifactId>LocalImplementation</artifactId>
+	  <version>0.0.1-SNAPSHOT</version>
+	  <scope>runtime</scope>
+    </dependency>
+    
+  </dependencies>
+  
+  
+  
+      <build>
+       
+        <plugins>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.8</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>
+                                ${project.build.directory}/libs
+                            </outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>libs/</classpathPrefix>
+                            <mainClass>
+                               CommandLine
+                            </mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>     
+        
+        </plugins>
+    
+    </build>
+  
+  
 </project>
