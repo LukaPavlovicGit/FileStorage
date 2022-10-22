@@ -4,9 +4,11 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import fileMetadata.FileMetadata;
 
@@ -20,11 +22,17 @@ public class StorageInformation {
 	private boolean storageConnected = false;
 	
 	private Map<FileMetadata, List<FileMetadata>> storageTreeStructure = new HashMap<FileMetadata, List<FileMetadata>>();
-	// za potrebe serijalizacije i deserijalizacije storageTreeStructure structure !!!!
+	// za potrebe serijalizacije i deserijalizacije storageTreeStructure strukture !!!!
 	private List<FileMetadata> keys = new ArrayList<>();
 	private Map<Integer, List<FileMetadata>> map = new HashMap<>();
-	// ============================================================
+	// ================================================================================
 	
+	// configuration
+	private Long storageSize = 1024L; // 1KB
+	private Set<String> unsupportedFiles = new HashSet<>();
+	private Map<String, Integer> dirNumberOfFilesLimit = new HashMap<>();
+	// ================================================================================
+
 	private FileMetadata storageDirectory;
 	private FileMetadata datarootDirectory;
 	private FileMetadata downloadFile;
@@ -63,6 +71,24 @@ public class StorageInformation {
 	}
 	public void setMap(Map<Integer, List<FileMetadata>> map) {
 		this.map = map;
+	}
+	public Long getStorageSize() {
+		return storageSize;
+	}
+	public void setStorageSize(Long storageSize) {
+		this.storageSize = storageSize;
+	}
+	public Set<String> getUnsupportedFiles() {
+		return unsupportedFiles;
+	}
+	public void setUnsupportedFiles(Set<String> unsupportedFiles) {
+		this.unsupportedFiles = unsupportedFiles;
+	}
+	public Map<String, Integer> getDirNumberOfFilesLimit() {
+		return dirNumberOfFilesLimit;
+	}
+	public void setDirNumberOfFilesLimit(Map<String, Integer> dirNumberOfFilesLimit) {
+		this.dirNumberOfFilesLimit = dirNumberOfFilesLimit;
 	}
 	public FileMetadata getStorageInformationJSONfile() {
 		return storageInformationJSONfile;
@@ -135,32 +161,7 @@ public class StorageInformation {
 	}
 	public void setStorageTreeStructureJSOnID(String storageTreeStructureJSOnID) {
 		this.storageTreeStructureJSOnID = storageTreeStructureJSOnID;
-	}
-	@Override
-	public String toString() {
-		final int maxLen = 22;
-		return "StorageInformation [storageTreeStructure="
-				+ (storageTreeStructure != null ? toString(storageTreeStructure.entrySet(), maxLen) : null)
-				+ ", storageDirectory=" + storageDirectory + ", datarootDirectory=" + datarootDirectory
-				+ ", downloadFile=" + downloadFile + ", configJSONfile=" + configJSONfile
-				+ ", storageInformationJSONfile=" + storageInformationJSONfile + ", currentDirectory="
-				+ currentDirectory + ", storageDirectoryID=" + storageDirectoryID + ", datarootDirectoryID="
-				+ datarootDirectoryID + ", downloadFileID=" + downloadFileID + ", configJSOnID=" + configJSOnID
-				+ ", storageTreeStructureJSOnID=" + storageTreeStructureJSOnID + "]";
-	}
-	private String toString(Collection<?> collection, int maxLen) {
-		StringBuilder builder = new StringBuilder();
-		builder.append("[");
-		int i = 0;
-		for (Iterator<?> iterator = collection.iterator(); iterator.hasNext() && i < maxLen; i++) {
-			if (i > 0)
-				builder.append(", ");
-			builder.append(iterator.next());
-		}
-		builder.append("]");
-		return builder.toString();
-	}
-	
+	}	
 	public void dismantleStorageTreeStructure() {
 		
 		this.keys = new ArrayList<>();
@@ -185,5 +186,46 @@ public class StorageInformation {
 		
 		this.keys = null;
 		this.map = null;
+	}
+	@Override
+	public String toString() {
+		final int maxLen = 10;
+		return "StorageInformation [storageConnected=" + storageConnected + ", "
+				+ (storageTreeStructure != null
+						? "storageTreeStructure=" + toString(storageTreeStructure.entrySet(), maxLen) + ", "
+						: "")
+				+ (keys != null ? "keys=" + toString(keys, maxLen) + ", " : "")
+				+ (map != null ? "map=" + toString(map.entrySet(), maxLen) + ", " : "")
+				+ (storageSize != null ? "storageSize=" + storageSize + ", " : "")
+				+ (unsupportedFiles != null ? "unsupportedFiles=" + toString(unsupportedFiles, maxLen) + ", " : "")
+				+ (dirNumberOfFilesLimit != null
+						? "dirNumberOfFilesLimit=" + toString(dirNumberOfFilesLimit.entrySet(), maxLen) + ", "
+						: "")
+				+ (storageDirectory != null ? "storageDirectory=" + storageDirectory + ", " : "")
+				+ (datarootDirectory != null ? "datarootDirectory=" + datarootDirectory + ", " : "")
+				+ (downloadFile != null ? "downloadFile=" + downloadFile + ", " : "")
+				+ (configJSONfile != null ? "configJSONfile=" + configJSONfile + ", " : "")
+				+ (storageInformationJSONfile != null
+						? "storageInformationJSONfile=" + storageInformationJSONfile + ", "
+						: "")
+				+ (currentDirectory != null ? "currentDirectory=" + currentDirectory + ", " : "")
+				+ (storageDirectoryID != null ? "storageDirectoryID=" + storageDirectoryID + ", " : "")
+				+ (datarootDirectoryID != null ? "datarootDirectoryID=" + datarootDirectoryID + ", " : "")
+				+ (downloadFileID != null ? "downloadFileID=" + downloadFileID + ", " : "")
+				+ (configJSOnID != null ? "configJSOnID=" + configJSOnID + ", " : "")
+				+ (storageTreeStructureJSOnID != null ? "storageTreeStructureJSOnID=" + storageTreeStructureJSOnID : "")
+				+ "]";
+	}
+	private String toString(Collection<?> collection, int maxLen) {
+		StringBuilder builder = new StringBuilder();
+		builder.append("[");
+		int i = 0;
+		for (Iterator<?> iterator = collection.iterator(); iterator.hasNext() && i < maxLen; i++) {
+			if (i > 0)
+				builder.append(", ");
+			builder.append(iterator.next());
+		}
+		builder.append("]");
+		return builder.toString();
 	}
 }

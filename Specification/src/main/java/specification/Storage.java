@@ -34,7 +34,7 @@ import storageManager.StorageManager;
 
 public abstract class Storage {
 	
-	public abstract boolean createStorage(String dest, StorageConfiguration storageConfiguration) 
+	public abstract boolean createStorage(String dest) 
 			throws StorageException, NamingPolicyException, PathException, StorageConnectionException; // mkstrg
 	
 	public abstract boolean connectToStorage(String src) throws NotFound, StorageException, StorageConnectionException; // con
@@ -382,9 +382,13 @@ public abstract class Storage {
 		return result;
 	}
 	
+	public void setStorageConfiguration(Long size, Set<String> unsupportedFiles) {
+		StorageManager.getInstance().getStorageInformation().setStorageSize(size);
+		StorageManager.getInstance().getStorageInformation().setUnsupportedFiles(unsupportedFiles);
+	}
+	
 	protected boolean createStorageTreeStructure(String dest) {
 		
-		StorageConfiguration storageConfiguration = StorageManager.getInstance().getStorageConfiguration();
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<FileMetadata, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();
 		Path path = Paths.get(dest);
@@ -397,8 +401,8 @@ public abstract class Storage {
 			.withTimeModified(new Date())
 			.withIsDirectory(true)
 			.withIsStorage(true)
-			.withStorageSize(storageConfiguration.getStorageSize())
-			.withUnsupportedFiles(storageConfiguration.getUnsupportedFiles())
+			.withStorageSize(storageInformation.getStorageSize())
+			.withUnsupportedFiles(storageInformation.getUnsupportedFiles())
 			.build();
 		
 		FileMetadata dataRoot = new FileMetadataBuilder()
@@ -461,9 +465,7 @@ public abstract class Storage {
 		storageInformation.setCurrentDirectory(dataRoot);
 		storageInformation.setDownloadFile(downloads);
 		
-		saveToJSON(storageInformation);
-		saveToJSON(storageConfiguration);
-				
+		saveToJSON(storageInformation);						
 		return true;
 	}
 		
@@ -648,12 +650,12 @@ public abstract class Storage {
 		if(dest == null)
 			throw new NotFound("Destination path not correct!");
 		
-		Long storageSize = StorageManager.getInstance().getStorageConfiguration().getStorageSize();
+		Long storageSize = StorageManager.getInstance().getStorageInformation().getStorageSize();
 		if(storageSize != null) {
 			if(storageSize - file.getSize() < 0)
 				throw new StorageSizeException("Storage size limit has been reached!");
 			
-			 StorageManager.getInstance().getStorageConfiguration().setStorageSize(storageSize - file.getSize());
+			 StorageManager.getInstance().getStorageInformation().setStorageSize(storageSize - file.getSize());
 		}
 		
 		if(dest.getNumOfFilesLimit() != null) {
