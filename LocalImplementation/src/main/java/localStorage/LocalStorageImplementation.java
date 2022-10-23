@@ -7,20 +7,22 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import configuration.StorageConfiguration; 
 import exception.DirectoryException;
 import exception.NamingPolicyException;
 import exception.NotFound;
 import exception.PathException;
 import exception.StorageConnectionException;
 import exception.StorageException;
+import exception.StoragePathException;
 import exception.StorageSizeException;
 import exception.UnsupportedFileException;
 import fileMetadata.FileMetadata;
@@ -39,20 +41,27 @@ public class LocalStorageImplementation extends Storage {
 	}
 	// onemoguciti da se u okviru storege-a pravi drugi storage
 	@Override
-	public boolean createStorage(String dest, StorageConfiguration storageConfiguration) 
-			throws StorageException, NamingPolicyException, PathException, StorageConnectionException {
+	public boolean createStorage(String dest) 
+			throws StorageException, NamingPolicyException, PathException, StorageConnectionException, StoragePathException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
-			throw new StorageConnectionException("Disconnect from the current storage in order to create new one storage!");
+			throw new StorageConnectionException("Disconnect from the current storage in order to create the new  one storage!");
 		
-		Path path = Paths.get(dest);
+		String userDirectoryPath = FileUtils.getUserDirectoryPath();
+		if(!dest.startsWith(userDirectoryPath))
+			throw new PathException(String.format("Storage must reside in the User's directory! Make sure that storage path starts with '%s'", userDirectoryPath));
 		
+		Path path = Paths.get(dest);		
 		String storageName = path.getFileName().toString();
 		Path parentPath = path.getParent();
 	
 		File parentDirectory = new File(parentPath.toString());
 		if(!parentDirectory.exists())
-			throw new PathException("Given destination does not exist!");
+			parentDirectory.mkdirs();
+		
+		if(checkStorageExistence(parentPath.toString()))
+			throw new StoragePathException("Storage path is not valid! Along the given path storage already exist.");
+			
 		
 		for(String fName : parentDirectory.list()) {
 			if(fName.equals(storageName))
@@ -62,62 +71,52 @@ public class LocalStorageImplementation extends Storage {
 		File storage = new File(dest);
 		storage.mkdir();
 		
-		File dataRootDirectory = new File(dest + File.separator + StorageInformation.datarootDirName);
-		File configurationFSONfile = new File(dest + File.separator + StorageInformation.configJSONFileName);
-		File storageInformationJSONfile = new File(dest + File.separator + StorageInformation.storageInformationJSONFileName);
-		File downloadFile = new File(dest + File.separator + StorageInformation.downloadFileName);
+		File dataRootDirectory = new File(dest + File.separator + StorageInformation.datarootDirName);		
+		File storageInformationJSONfile = new File(dest + File.separator + StorageInformation.storageInformationJSONFileName);		
 		
-		try {
-			
-			dataRootDirectory.mkdir();
-			configurationFSONfile.createNewFile();
-			storageInformationJSONfile.createNewFile();
-			downloadFile.createNewFile();
-			
+		try {			
+			dataRootDirectory.mkdir();			
+			storageInformationJSONfile.createNewFile();						
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
-		if(storageConfiguration != null)
-			StorageManager.getInstance().setStorageConfiguration(storageConfiguration);
-		
 		createStorageTreeStructure(dest);
 		StorageManager.getInstance().getStorageInformation().setStorageConnected(true);
-		
 		return true;
 	}
 
 	@Override
-	public boolean connectToStorage(String src) throws NotFound, StorageException, StorageConnectionException {
+	public boolean connectToStorage(String src) throws NotFound, StorageException, StorageConnectionException, PathException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
-			throw new StorageConnectionException("Disconnection from the current storage is requiered in order to connect to new one!");
+			throw new StorageConnectionException("Disconnection from the current storage is requiered in order to connect to the new one!");
 		
-		Path path = Paths.get(src);
+		String userDirectoryPath = FileUtils.getUserDirectoryPath();
+		if(!src.startsWith(userDirectoryPath))
+			throw new PathException(String.format("Given path is incorrect! Make sure that storage path starts with '%s'", userDirectoryPath));
 		
-		File sourceDirectory = new File(path.toString());
-		if(!sourceDirectory.exists())
+		Path path = Paths.get(src);		
+		File directory = new File(path.toString());
+		if(!directory.exists())
 			throw new NotFound("Given destination does not exist!");
 		
 		int numOfDefaultFiles = 0;
 		
-		for(String fName : sourceDirectory.list()) {
+		for(String fName : directory.list()) {
 			if( fName.equals(StorageInformation.storageInformationJSONFileName) ||
-				fName.equals(StorageInformation.datarootDirName) ||
-				fName.equals(StorageInformation.configJSONFileName) ) {
+				fName.equals(StorageInformation.datarootDirName) ) {
 				
-				if(++numOfDefaultFiles == 3)
+				if(++numOfDefaultFiles == 2)
 					break;
 			}
 		}
 		
-		if(numOfDefaultFiles < 3)
+		if(numOfDefaultFiles < 2)
 			throw new StorageException("Given path does not represent the storage!");
 		
 		readFromJSON(new StorageInformation(), src);
-		readFromJSON(new StorageConfiguration(), src);
-		StorageManager.getInstance().getStorageInformation().setStorageConnected(true);
-		
+		StorageManager.getInstance().getStorageInformation().setStorageConnected(true);		
 		return true;
 	}
 	
@@ -128,7 +127,6 @@ public class LocalStorageImplementation extends Storage {
 			return true;
 		
 		saveToJSON(new StorageInformation());
-		saveToJSON(new StorageConfiguration());
 		StorageManager.getInstance().getStorageInformation().setStorageConnected(false);
 		
 		return true;
@@ -157,7 +155,7 @@ public class LocalStorageImplementation extends Storage {
 			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest;
 		
 		if(filesLimit.length>0) {
-			Map<String, Integer> map = StorageManager.getInstance().getStorageConfiguration().getDirNumberOfFilesLimit();
+			Map<String, Integer> map = StorageManager.getInstance().getStorageInformation().getDirNumberOfFilesLimit();
 			map.put(dest, filesLimit[0]);
 		}
 		
@@ -360,12 +358,12 @@ public class LocalStorageImplementation extends Storage {
 		
 		Long size = text.length() + ((append == true) ? file.length() : 0L);
 		
-		Long storageSize = StorageManager.getInstance().getStorageConfiguration().getStorageSize();
+		Long storageSize = StorageManager.getInstance().getStorageInformation().getStorageSize();
 		if(storageSize != null) {
 			if(storageSize - size < 0)
 				throw new StorageSizeException("Storage size limit has been reached!");
 			
-			StorageManager.getInstance().getStorageConfiguration().setStorageSize(storageSize - size);;
+			StorageManager.getInstance().getStorageInformation().setStorageSize(storageSize - size);;
 		}
 		
 		try (FileWriter fileOut = new FileWriter(filePath, append)) {
@@ -376,6 +374,38 @@ public class LocalStorageImplementation extends Storage {
 			System.out.println(e.getMessage());
 	    }
 		
+	}
+	
+	@Override
+	protected boolean checkStorageExistence(String dest) throws PathException{
+						
+		String userDirectoryPath = FileUtils.getUserDirectoryPath();
+		if(!dest.startsWith(userDirectoryPath))
+			throw new PathException(String.format("Storage must reside in the User's directory! Make sure that storage path starts with '%s'", userDirectoryPath));
+				
+		// ne radimo proveru za C:\Users\Luka, vec za C:\Users\Luka\...\...\...
+		Path path = Paths.get(dest.substring(userDirectoryPath.length()));
+		Path currPath = Paths.get(userDirectoryPath);		
+		Iterator<Path> iterator = path.iterator();
+
+		while(iterator.hasNext()) {
+
+			currPath = currPath.resolve(iterator.next().toString());
+			File directory = new File(currPath.toString());
+			int numOfDefaultFiles = 0;
+			
+			for(String fName : directory.list()) {
+				if( fName.equals(StorageInformation.storageInformationJSONFileName) ||
+					fName.equals(StorageInformation.datarootDirName) ) {
+										
+					if(++numOfDefaultFiles == 2)
+						return true;
+				}
+				
+			}
+		}
+		
+		return false;
 	}
 
 	@Override
@@ -392,10 +422,6 @@ public class LocalStorageImplementation extends Storage {
 			StorageManager.getInstance().getStorageInformation().dismantleStorageTreeStructure();
 			jsonString = gson.toJson((StorageInformation) obj);
 			StorageManager.getInstance().getStorageInformation().buildStorageTreeStructure();
-		}
-		else if(obj instanceof StorageConfiguration) {
-			path = StorageManager.getInstance().getStorageInformation().getStorageDirectory().getAbsolutePath() + File.separator + StorageInformation.configJSONFileName;
-			jsonString = gson.toJson((StorageConfiguration) obj);	
 		}
 		
 		if(path == null || jsonString == null)
@@ -419,8 +445,6 @@ public class LocalStorageImplementation extends Storage {
 		
 		if(obj instanceof StorageInformation) 
 			path = src + File.separator + StorageInformation.storageInformationJSONFileName;
-		else if(obj instanceof StorageConfiguration)
-			path = src + File.separator + StorageInformation.configJSONFileName;
 	
 		if(path == null)
 			return;
@@ -430,9 +454,7 @@ public class LocalStorageImplementation extends Storage {
 			if(obj instanceof StorageInformation) {
 				StorageManager.getInstance().setStorageInformation(gson.fromJson(reader, StorageInformation.class));
 				StorageManager.getInstance().getStorageInformation().buildStorageTreeStructure();
-			}
-			else if(obj instanceof StorageConfiguration) 
-				StorageManager.getInstance().setStorageConfiguration(gson.fromJson(reader, StorageConfiguration.class));
+			}			
 
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
