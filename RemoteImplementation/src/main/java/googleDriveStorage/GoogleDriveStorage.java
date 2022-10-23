@@ -1,9 +1,16 @@
 package googleDriveStorage;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +31,10 @@ import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,14 +50,17 @@ import exception.NotFound;
 import exception.PathException;
 import exception.StorageConnectionException;
 import exception.StorageException;
+import exception.StoragePathException;
 import exception.StorageSizeException;
 import exception.UnsupportedFileException;
 import specification.Storage;
+import storageInformation.StorageInformation;
 import storageManager.StorageManager;
 
 public class GoogleDriveStorage extends Storage {
 	
 	private Drive service;
+	private StringBuilder sb = new StringBuilder();
 	
 
 	/**
@@ -116,33 +130,63 @@ public class GoogleDriveStorage extends Storage {
                 .setApplicationName(APPLICATION_NAME)
                 .build();
     }
-
-	
-
-	
 	
 	static {
 		StorageManager.registerStorage(new GoogleDriveStorage());
 	}
 	
+	private GoogleDriveStorage() {
+		try {
+			this.service = getDriveService();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 		@Override
-	public boolean createStorage(String dest, StorageConfiguration storageConfiguration)
-			throws StorageException, NamingPolicyException, PathException, StorageConnectionException {
-		// TODO Auto-generated method stub
+	public boolean createStorage(String dest)
+			throws StorageException, NamingPolicyException, PathException, StorageConnectionException, StoragePathException {
 			
-			try {
-				service = getDriveService();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
+				throw new StorageConnectionException("Disconnect from the current storage in order to create new one storage!");	
+			
+			
+			// u lokalu cuvamo podatke o remote skladistima
+			java.io.File file = new java.io.File(StorageInformation.storageInformationJSONFileName);
+			if(!file.exists()) {				
+				try{			
+					file.createNewFile();									
+				} catch (IOException e) {				
+					e.printStackTrace();
+				}									
 			}
-			File fileMetadata = new File();
-			fileMetadata.setName(dest);
-			fileMetadata.setMimeType("application/vnd.google-apps.folder");
-			try {
-				File storageFile = service.files().create(fileMetadata).setFields("id").execute();
+			
+			Path path = Paths.get(dest);			
+			dest = path.getFileName().toString();
+			
+			if(!validateStoragePath(dest))
+				throw new StoragePathException("Storage path exception!");
+			
+			
+			try {						
+				File storageMetadata = new File();
+				storageMetadata.setName(dest);
+				storageMetadata.setMimeType("application/vnd.google-apps.folder");
+				File storage = service.files().create(storageMetadata).setFields("id").execute();
+				
+				File datarootMetadata = new File();
+				datarootMetadata.setName(StorageInformation.datarootDirName);
+				datarootMetadata.setMimeType("application/vnd.google-apps.folder");
+				datarootMetadata.setParents(Collections.singletonList(storage.getId()));
+				File dataroot = service.files().create(datarootMetadata).setFields("id").execute();
+				
+				StorageManager.getInstance().getStorageInformation().setStorageDirectoryID(storage.getId());
+				StorageManager.getInstance().getStorageInformation().setDatarootDirectoryID(dataroot.getId());
+																
+				createStorageTreeStructure(dest);
+				
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
@@ -211,11 +255,76 @@ public class GoogleDriveStorage extends Storage {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override// da vraca FileMetadata 
+	protected boolean validateStoragePath(String path) {
+		
+		try {
+			
+			java.io.File file = new java.io.File(StorageInformation.storageInformationJSONFileName);												
+			Gson gson = new Gson();			
+			BufferedReader reader = new BufferedReader(new FileReader(file));
+			Type type = new TypeToken<ArrayList<StorageInformation>>() {}.getType();
+			ArrayList<StorageInformation> list = gson.fromJson(reader, type);
 
+			if(list == null)
+				return true;
+			
+			for(StorageInformation si : list) 
+				if(si.getStorageDirectory().getName().equals(path))
+					return false;			
+													
+		} catch (IOException e) {			
+			e.printStackTrace();
+		}
+		
+		return true;
+	}
+	
 	@Override
 	protected void saveToJSON(Object obj) {
-		// TODO Auto-generated method stub
+
+		String jsonString = null;
+		Gson gson = new Gson();
 		
+		if(obj instanceof StorageInformation) { 						
+			StorageManager.getInstance().getStorageInformation().setCurrentDirectory(StorageManager.getInstance().getStorageInformation().getDatarootDirectory());
+			StorageManager.getInstance().getStorageInformation().dismantleStorageTreeStructure();
+			jsonString = gson.toJson((StorageInformation) obj);
+			StorageManager.getInstance().getStorageInformation().buildStorageTreeStructure();
+				
+			if(jsonString == null)
+				return;
+						
+			java.io.File file = new java.io.File(StorageInformation.storageInformationJSONFileName);			
+			try(BufferedReader reader = new BufferedReader(new FileReader(file)) ){
+				
+				if(file.length() == 0) {
+					sb.append("[");
+					sb.append(jsonString);
+					sb.append("]");
+				}
+				else {
+					String line = reader.readLine();
+					sb = new StringBuilder(line);
+					sb.deleteCharAt(sb.length() - 1);
+					sb.append(",");
+					sb.append(jsonString);
+					sb.append("]"); 
+				}
+											
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+
+			try (FileWriter fileOut = new FileWriter(file)) {															
+				
+				fileOut.write(String.valueOf(sb));		    
+			
+			} catch (Exception e) {
+				e.printStackTrace();
+		    }
+		}
 	}
 
 	@Override
