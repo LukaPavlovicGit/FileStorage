@@ -196,7 +196,12 @@ public class GoogleDriveStorage extends Storage {
 	@Override
 	public boolean connectToStorage(String src) throws NotFound, StorageException, StorageConnectionException {
 		
-		return false;
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
+			throw new StorageConnectionException("Disconnection from the current storage is requiered in order to connect to the new one!");
+		
+		readFromJSON(new StorageInformation(), src);
+		
+		return (StorageManager.getInstance().getStorageInformation().isStorageConnected()==true) ? true : false;
 	}
 
 	@Override
@@ -328,9 +333,32 @@ public class GoogleDriveStorage extends Storage {
 	}
 
 	@Override
-	protected void readFromJSON(Object obj, String path) {
-		// TODO Auto-generated method stub
-		
+	protected void readFromJSON(Object obj, String src) {
+		if(obj instanceof StorageInformation) {
+			try {
+				Path path = Paths.get(src); 						
+				java.io.File file = new java.io.File(StorageInformation.storageInformationJSONFileName);												
+				Gson gson = new Gson();			
+				BufferedReader reader = new BufferedReader(new FileReader(file));
+				Type type = new TypeToken<ArrayList<StorageInformation>>() {}.getType();
+				ArrayList<StorageInformation> list = gson.fromJson(reader, type);
+	
+				if(list == null)
+					return;
+				
+				for(StorageInformation si : list) {
+					if(si.getStorageDirectory().getName().equals(path.getFileName().toString())) {
+						StorageManager.getInstance().setStorageInformation(si);
+						StorageManager.getInstance().getStorageInformation().buildStorageTreeStructure();
+						StorageManager.getInstance().getStorageInformation().setStorageConnected(true);					
+						return;
+					}
+				}				
+														
+			} catch (IOException e) {			
+				e.printStackTrace();
+			}
+		}
 	}
 
 }
