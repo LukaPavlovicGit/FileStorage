@@ -18,6 +18,13 @@
 	  <scope>runtime</scope>
     </dependency>
     
+    <dependency>
+	  <groupId>raf.edu.componente</groupId>
+	  <artifactId>RemoteImplementation</artifactId>
+	  <version>0.0.1-SNAPSHOT</version>
+	  <scope>runtime</scope>
+    </dependency>
+    
   </dependencies>
   
   

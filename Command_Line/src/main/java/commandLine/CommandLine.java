@@ -24,8 +24,8 @@ public class CommandLine {
 		
 		
 			try {
-				Class.forName("localStorage.LocalStorageImplementation");
-				// Class.forName("localStorage.LocalStorageImplementation");
+				//Class.forName("localStorage.LocalStorageImplementation");
+				Class.forName("googleDriveStorage.GoogleDriveStorage");
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -52,14 +52,13 @@ public class CommandLine {
 	            		System.out.println("Storage configuration guide...");
             			System.out.println("To skip this step and keep default configuration press 'n'.");
             			
-            			StorageConfiguration configuration = new StorageConfiguration();
+            			Long size = null;
+        				Set<String> unsupportedFiles = null;
             			command = scanner.nextLine();
             			
             			if(!command.equals("n")) {
             				
-            				Long size = null;
-            				Set<String> set = new HashSet<>();
-            				
+            				unsupportedFiles = new HashSet<>();
             				boolean correct = true;
             				do {
             					System.out.println("Enter storage size in bytes...");
@@ -84,14 +83,14 @@ public class CommandLine {
             				command = scanner.nextLine();
             				String[] exts = command.split(" ");
             				for(String s : exts)
-            					set.add(s);
-            				
-            				configuration.setStorageSize(size);
-            				configuration.setUnsupportedFiles(set);
-            				
+            					unsupportedFiles.add(s);            				            				            				
             			}
-            			if(storage.createStorage(dest, configuration))
+            			if(storage.createStorage(dest)) {
+            				if(size != null && unsupportedFiles != null)
+            					storage.setStorageConfiguration(size, unsupportedFiles);
+            				
             				System.out.println("Storage created successfully!");
+            			}
 	            	}
 	            	else if(commArray.length == 2 && commArray[0].equals("con")) {
 	            		String src = commArray[1];
@@ -329,9 +328,10 @@ public class CommandLine {
 	   	            	
 	            }catch (Exception e) {
 	            	System.out.println(e.getMessage());
+	            	continue;
 	            }
 	            	        		        	
-	        	if (command.equals("exit")) {
+	            if (command.equals("exit")) {
 	                return;
 	            }
 	        	
@@ -448,11 +448,7 @@ public class CommandLine {
 	        	else if (command.equals("commands")) {
 	                listCommands();
 	                continue;
-	            }
-	        	
-	        	else {
-	        		System.out.println("Commands is not recogized! Type 'commands' to se list of commands.");
-	        	}
+	            }	        	        	
 	            
 	        }
 	}
