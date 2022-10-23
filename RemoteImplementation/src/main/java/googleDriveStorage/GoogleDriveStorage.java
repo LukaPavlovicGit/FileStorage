@@ -144,7 +144,7 @@ public class GoogleDriveStorage extends Storage {
 		}
 	}
 	
-		@Override
+	@Override
 	public boolean createStorage(String dest)
 			throws StorageException, NamingPolicyException, PathException, StorageConnectionException, StoragePathException {
 			
@@ -165,7 +165,7 @@ public class GoogleDriveStorage extends Storage {
 			Path path = Paths.get(dest);			
 			dest = path.getFileName().toString();
 			
-			if(!validateStoragePath(dest))
+			if(!checkStorageExistence(dest))
 				throw new StoragePathException("Storage path exception!");
 			
 			
@@ -257,10 +257,10 @@ public class GoogleDriveStorage extends Storage {
 	}
 	
 	@Override// da vraca FileMetadata 
-	protected boolean validateStoragePath(String path) {
+	protected boolean checkStorageExistence(String dest) {
 		
 		try {
-			
+			Path path = Paths.get(dest); 						
 			java.io.File file = new java.io.File(StorageInformation.storageInformationJSONFileName);												
 			Gson gson = new Gson();			
 			BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -271,7 +271,7 @@ public class GoogleDriveStorage extends Storage {
 				return true;
 			
 			for(StorageInformation si : list) 
-				if(si.getStorageDirectory().getName().equals(path))
+				if(si.getStorageDirectory().getName().equals(path.getFileName().toString()))
 					return false;			
 													
 		} catch (IOException e) {			
