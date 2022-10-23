@@ -86,7 +86,7 @@ public abstract class Storage {
 	
 	public abstract void writeToFile(String filePath, String text, boolean append) throws NotFound, StorageSizeException, StorageConnectionException; //write
 	
-	protected abstract boolean validateStoragePath(String path);
+	protected abstract boolean checkStorageExistence(String path) throws PathException;
 	
 	protected abstract void saveToJSON(Object obj);
 	
