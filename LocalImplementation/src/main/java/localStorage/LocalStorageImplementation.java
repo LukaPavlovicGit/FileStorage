@@ -400,8 +400,7 @@ public class LocalStorageImplementation extends Storage {
 										
 					if(++numOfDefaultFiles == 2)
 						return true;
-				}
-				
+				}				
 			}
 		}
 		
@@ -454,6 +453,7 @@ public class LocalStorageImplementation extends Storage {
 			if(obj instanceof StorageInformation) {
 				StorageManager.getInstance().setStorageInformation(gson.fromJson(reader, StorageInformation.class));
 				StorageManager.getInstance().getStorageInformation().buildStorageTreeStructure();
+				StorageManager.getInstance().getStorageInformation().setStorageConnected(true);
 			}			
 
 		} catch (IOException e) {
