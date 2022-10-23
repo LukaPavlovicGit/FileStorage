@@ -185,12 +185,13 @@ public class GoogleDriveStorage extends Storage {
 				StorageManager.getInstance().getStorageInformation().setDatarootDirectoryID(dataroot.getId());
 																
 				createStorageTreeStructure(dest);
+				StorageManager.getInstance().getStorageInformation().setStorageConnected(true);
 				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			
-		return false;
+		return true;
 	}
 
 	@Override
@@ -206,22 +207,28 @@ public class GoogleDriveStorage extends Storage {
 
 	@Override
 	public boolean disconnectFromStorage() {
-		// TODO Auto-generated method stub
-		return false;
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			return true;
+		
+		saveToJSON(new StorageInformation());
+		StorageManager.getInstance().getStorageInformation().setStorageConnected(false);
+		
+		return true;
 	}
 
 	@Override
 	public boolean createDirectory(String dest, Integer... filesLimit)
 			throws StorageSizeException, NamingPolicyException, DirectoryException, StorageConnectionException {
 		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override
 	public boolean createFile(String dest)
 			throws StorageSizeException, NamingPolicyException, UnsupportedFileException, StorageConnectionException {
 		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override
@@ -261,7 +268,7 @@ public class GoogleDriveStorage extends Storage {
 		
 	}
 	
-	@Override// da vraca FileMetadata 
+	@Override
 	protected boolean checkStorageExistence(String dest) {
 		
 		try {
@@ -293,6 +300,46 @@ public class GoogleDriveStorage extends Storage {
 		Gson gson = new Gson();
 		
 		if(obj instanceof StorageInformation) { 						
+			
+			// prvo proveravamo da li je storage prethodno upisan u JSON file, ako jeste samo updatujemo podatke
+			java.io.File file = new java.io.File(StorageInformation.storageInformationJSONFileName);			
+			try( BufferedReader reader = new BufferedReader(new FileReader(file)) ){				
+				
+				if(file.length() > 0) {					
+					
+					Type type = new TypeToken<ArrayList<StorageInformation>>() {}.getType();
+					ArrayList<StorageInformation> list = gson.fromJson(reader, type);					
+					
+					if(list != null) {																		
+						for(int i=0 ; i<list.size() ; i++) {
+							
+							StorageInformation si = list.get(i);							
+							if(si.getStorageDirectory().getName().equals(StorageManager.getInstance().getStorageInformation().getStorageDirectory().getName())) {
+								
+								list.add(i, StorageManager.getInstance().getStorageInformation());
+								
+								StorageManager.getInstance().getStorageInformation().setCurrentDirectory(StorageManager.getInstance().getStorageInformation().getDatarootDirectory());
+								StorageManager.getInstance().getStorageInformation().dismantleStorageTreeStructure();
+								jsonString = gson.toJson(list, type);
+								StorageManager.getInstance().getStorageInformation().buildStorageTreeStructure();																
+								
+								try (FileWriter fileOut = new FileWriter(file)) {																								
+									fileOut.write(jsonString);		    								
+								} catch (Exception e) {
+									e.printStackTrace();
+							    }	
+								
+								return;
+							}
+						}												
+					}
+				}				
+				
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+			
+			// ako ne postoji u JSON fajlu upisujemo ga sada
 			StorageManager.getInstance().getStorageInformation().setCurrentDirectory(StorageManager.getInstance().getStorageInformation().getDatarootDirectory());
 			StorageManager.getInstance().getStorageInformation().dismantleStorageTreeStructure();
 			jsonString = gson.toJson((StorageInformation) obj);
@@ -300,9 +347,8 @@ public class GoogleDriveStorage extends Storage {
 				
 			if(jsonString == null)
 				return;
-						
-			java.io.File file = new java.io.File(StorageInformation.storageInformationJSONFileName);			
-			try(BufferedReader reader = new BufferedReader(new FileReader(file)) ){
+									
+			try(BufferedReader reader = new BufferedReader(new FileReader(file))){													
 				
 				if(file.length() == 0) {
 					sb.append("[");
@@ -317,18 +363,17 @@ public class GoogleDriveStorage extends Storage {
 					sb.append(jsonString);
 					sb.append("]"); 
 				}
-											
+				
+				try (FileWriter fileOut = new FileWriter(file)) {																				
+					fileOut.write(String.valueOf(sb));		    				
+				} catch (Exception e) {
+					e.printStackTrace();
+			    }
+															
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
-
-			try (FileWriter fileOut = new FileWriter(file)) {															
-				
-				fileOut.write(String.valueOf(sb));		    
 			
-			} catch (Exception e) {
-				e.printStackTrace();
-		    }
 		}
 	}
 
