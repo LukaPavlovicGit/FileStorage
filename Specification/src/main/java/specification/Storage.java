@@ -25,6 +25,7 @@ import exception.NotFound;
 import exception.PathException;
 import exception.StorageConnectionException;
 import exception.StorageException;
+import exception.StoragePathException;
 import exception.StorageSizeException;
 import exception.UnsupportedFileException;
 import fileMetadata.FileMetadata;
@@ -35,9 +36,9 @@ import storageManager.StorageManager;
 public abstract class Storage {
 	
 	public abstract boolean createStorage(String dest) 
-			throws StorageException, NamingPolicyException, PathException, StorageConnectionException; // mkstrg
+			throws StorageException, NamingPolicyException, PathException, StorageConnectionException, StoragePathException; // mkstrg
 	
-	public abstract boolean connectToStorage(String src) throws NotFound, StorageException, StorageConnectionException; // con
+	public abstract boolean connectToStorage(String src) throws NotFound, StorageException, PathException, StorageConnectionException; // con
 	
 	public abstract boolean disconnectFromStorage(); // discon
 	
@@ -84,6 +85,8 @@ public abstract class Storage {
 	public abstract void copyFile(String filePath, String dest) throws NotFound, StorageConnectionException; // copy
 	
 	public abstract void writeToFile(String filePath, String text, boolean append) throws NotFound, StorageSizeException, StorageConnectionException; //write
+	
+	protected abstract boolean validateStoragePath(String path);
 	
 	protected abstract void saveToJSON(Object obj);
 	
@@ -415,17 +418,6 @@ public abstract class Storage {
 			.withIsDirectory(true)
 			.withIsDataRoot(true)
 			.build();
-							
-		FileMetadata configJSONfile = new FileMetadataBuilder()
-			.withFileID(storageInformation.getConfigJSOnID())
-			.withName(StorageInformation.configJSONFileName)
-			.withAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.configJSONFileName)
-			.withParent(storage)
-			.withTimeCreated(new Date())
-			.withTimeModified(new Date())
-			.withIsFile(true)
-			.withIsConfigJSONFile(true)
-			.build();
 	
 		FileMetadata strorageInformationJSONfile = new FileMetadataBuilder()
 			.withFileID(storageInformation.getStorageTreeStructureJSOnID())
@@ -437,33 +429,18 @@ public abstract class Storage {
 			.withIsFile(true)
 			.withIsStrorageTreeStructureJSONFile(true)
 			.build();
-		
-		FileMetadata downloads = new FileMetadataBuilder()
-			.withFileID(storageInformation.getDownloadFileID())
-			.withName(StorageInformation.downloadFileName)
-			.withAbsolutePath(storage + File.separator + StorageInformation.downloadFileName)
-			.withParent(storage)
-			.withTimeCreated(new Date())
-			.withTimeModified(new Date())
-			.withIsFile(true)
-			.withIsDownloadFile(true)
-			.build();
 
 		
 		List<FileMetadata> storageAdjacent = new ArrayList<FileMetadata>();
 		storageAdjacent.add(dataRoot);
-		storageAdjacent.add(configJSONfile);
 		storageAdjacent.add(strorageInformationJSONfile);
-		storageAdjacent.add(downloads);
 		
 		storageTreeStracture.put(storage, storageAdjacent);
 		
 		storageInformation.setStorageDirectory(storage);
 		storageInformation.setDatarootDirectory(dataRoot);
-		storageInformation.setConfigJSONfile(configJSONfile);
 		storageInformation.setStorageInformationJSONfile(strorageInformationJSONfile);
 		storageInformation.setCurrentDirectory(dataRoot);
-		storageInformation.setDownloadFile(downloads);
 		
 		saveToJSON(storageInformation);						
 		return true;
