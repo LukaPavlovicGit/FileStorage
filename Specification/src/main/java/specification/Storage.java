@@ -78,9 +78,9 @@ public abstract class Storage {
 	
 	public abstract void remove(String filePath) throws NotFound, StorageConnectionException; // del
 	
-	public abstract void rename(String filePath, String newName) throws NotFound, StorageConnectionException; // rename
+	public abstract boolean rename(String filePath, String newName) throws NotFound, StorageConnectionException; // rename
 	
-	public abstract void download(String filePath, String downloadDest) throws NotFound, StorageConnectionException; // download
+	public abstract boolean download(String filePath, String downloadDest) throws NotFound, StorageConnectionException, PathException; // download
 	
 	public abstract void copyFile(String filePath, String dest) throws NotFound, StorageConnectionException; // copy
 	
@@ -684,6 +684,10 @@ public abstract class Storage {
 		}
 		
 		storageTreeStracture.get(dest.getRelativePath()).add(file);
+	}
+	
+	protected void writeToFileMetadata(String filePath, String text, boolean append) {
+		
 	}
 	
 	private FileMetadata getLastFileMetadataOnPath(Path path, String relativePath, final Map<String, List<FileMetadata>> storageTreeStracture) {

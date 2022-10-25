@@ -186,7 +186,7 @@ public class LocalStorageImplementation extends Storage {
 			new File(path.toString()).createNewFile();
 			
 		} catch (IOException e) {
-			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
 		
 		return true;
@@ -209,7 +209,7 @@ public class LocalStorageImplementation extends Storage {
 			FileUtils.moveToDirectory(new File(filePath), new File(newDest), false);	
 			
 		} catch (DirectoryException | NotFound | IOException e) {
-			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -252,7 +252,7 @@ public class LocalStorageImplementation extends Storage {
 	}
 
 	@Override
-	public void rename(String filePath, String newName) throws StorageConnectionException {
+	public boolean rename(String filePath, String newName) throws StorageConnectionException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -272,10 +272,11 @@ public class LocalStorageImplementation extends Storage {
 		} catch (NotFound | IOException e) {
 			e.printStackTrace();
 		}
+		return true;
 	}
 
 	@Override
-	public void download(String filePath, String dest) throws StorageConnectionException {
+	public boolean download(String filePath, String dest) throws StorageConnectionException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -295,7 +296,10 @@ public class LocalStorageImplementation extends Storage {
 			
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
+			return false;
 		}
+		
+		return true;
 	}
 	
 	@Override
