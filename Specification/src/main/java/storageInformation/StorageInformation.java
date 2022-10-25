@@ -21,7 +21,7 @@ public class StorageInformation {
 	
 	private boolean storageConnected = false;
 	
-	private Map<FileMetadata, List<FileMetadata>> storageTreeStructure = new HashMap<FileMetadata, List<FileMetadata>>();
+	private Map<String, List<FileMetadata>> storageTreeStructure = new HashMap<String, List<FileMetadata>>();
 	// za potrebe serijalizacije i deserijalizacije storageTreeStructure strukture !!!!
 	private List<FileMetadata> keys = new ArrayList<>();
 	private Map<Integer, List<FileMetadata>> map = new HashMap<>();
@@ -54,10 +54,10 @@ public class StorageInformation {
 	public void setStorageConnected(boolean storageConnected) {
 		this.storageConnected = storageConnected;
 	}
-	public Map<FileMetadata, List<FileMetadata>> getStorageTreeStructure() {
+	public Map<String, List<FileMetadata>> getStorageTreeStructure() {
 		return storageTreeStructure;
 	}
-	public void setStorageTreeStructure(Map<FileMetadata, List<FileMetadata>> storageTreeStructure) {
+	public void setStorageTreeStructure(Map<String, List<FileMetadata>> storageTreeStructure) {
 		this.storageTreeStructure = storageTreeStructure;
 	}
 	public List<FileMetadata> getKeys() {
@@ -162,31 +162,7 @@ public class StorageInformation {
 	public void setStorageTreeStructureJSOnID(String storageTreeStructureJSOnID) {
 		this.storageTreeStructureJSOnID = storageTreeStructureJSOnID;
 	}	
-	public void dismantleStorageTreeStructure() {
-		
-		this.keys = new ArrayList<>();
-		this.map = new HashMap<Integer, List<FileMetadata>>();
-		
-		int i = 0;
-		for(FileMetadata f : storageTreeStructure.keySet()) {
-			this.keys.add(i, f);
-			this.map.put(i++, storageTreeStructure.get(f));
-		}
-		
-		this.storageTreeStructure = null;
-	}
-	
-	public void buildStorageTreeStructure() {
-		
-		this.storageTreeStructure = new HashMap<FileMetadata, List<FileMetadata>>();
-		
-		for(int i = 0 ; i < this.keys.size() ; i++) {
-			this.storageTreeStructure.put( this.keys.get(i), this.map.get(i) );
-		}
-		
-		this.keys = null;
-		this.map = null;
-	}
+
 	@Override
 	public String toString() {
 		final int maxLen = 10;
