@@ -168,6 +168,12 @@ public class CommandLine {
 	            		String filePath = commArray[1];
 	            		storage.remove(filePath);
 	            	}
+	            	else if(commArray.length == 3 && commArray[0].equals("rename")) {
+	            		String filePath = commArray[1];
+	            		String newName = commArray[2];
+	            		if(!storage.rename(filePath, newName))
+	            			System.out.println("Something went wrong!");
+	            	}
 	            	else if(commArray.length == 3 && commArray[0].equals("download")) {
 	            		String filePath = commArray[1];
 	            		String downloadDest = commArray[2];
@@ -387,7 +393,7 @@ public class CommandLine {
 	                continue;
 	            }
 	        	
-	        	else if (command.equals("?rename")) {
+	        	else if (command.equals("?")) {
 	               
 	                continue;
 	            }
