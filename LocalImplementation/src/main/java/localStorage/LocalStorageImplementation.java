@@ -19,6 +19,7 @@ import com.google.gson.GsonBuilder;
 import exception.DirectoryException;
 import exception.NamingPolicyException;
 import exception.NotFound;
+import exception.OperationNotAllowed;
 import exception.PathException;
 import exception.StorageConnectionException;
 import exception.StorageException;
@@ -47,9 +48,8 @@ public class LocalStorageImplementation extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
 			throw new StorageConnectionException("Disconnect from the current storage in order to create the new  one storage!");
 		
-		String userDirectoryPath = FileUtils.getUserDirectoryPath();
-		if(!dest.startsWith(userDirectoryPath))
-			throw new PathException(String.format("Storage must reside in the User's directory! Make sure that storage path starts with '%s'", userDirectoryPath));
+		if(!dest.startsWith(FileUtils.getUserDirectoryPath()))
+			throw new PathException(String.format("Storage must reside in the User's directory! Make sure that storage path starts with '%s'", FileUtils.getUserDirectoryPath()));
 		
 		Path path = Paths.get(dest);		
 		String storageName = path.getFileName().toString();
@@ -92,9 +92,8 @@ public class LocalStorageImplementation extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
 			throw new StorageConnectionException("Disconnection from the current storage is requiered in order to connect to the new one!");
 		
-		String userDirectoryPath = FileUtils.getUserDirectoryPath();
-		if(!src.startsWith(userDirectoryPath))
-			throw new PathException(String.format("Given path is incorrect! Make sure that storage path starts with '%s'", userDirectoryPath));
+		if(!src.startsWith(FileUtils.getUserDirectoryPath()))
+			throw new PathException(String.format("Given path is incorrect! Make sure that storage path starts with '%s'", FileUtils.getUserDirectoryPath()));
 		
 		Path path = Paths.get(src);		
 		File directory = new File(path.toString());
@@ -115,8 +114,7 @@ public class LocalStorageImplementation extends Storage {
 		if(numOfDefaultFiles < 2)
 			throw new StorageException("Given path does not represent the storage!");
 		
-		readFromJSON(new StorageInformation(), src);
-		StorageManager.getInstance().getStorageInformation().setStorageConnected(true);		
+		readFromJSON(new StorageInformation(), src);	
 		return true;
 	}
 	
@@ -145,13 +143,11 @@ public class LocalStorageImplementation extends Storage {
 			fileMetadata.setNumOfFilesLimit( filesLimit.length>0 ? filesLimit[0] : null );
 			addFileMetadataToStorage(dest, fileMetadata);
 		
-		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException e) {
-			System.out.println(e.getMessage());
+		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
 			e.printStackTrace();
 		}
 		
-		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
-		if(!dest.startsWith(storagePathPrefix))
+		if(!dest.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
 			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest;
 		
 		if(filesLimit.length>0) {
@@ -171,8 +167,7 @@ public class LocalStorageImplementation extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
-		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
-		if(!dest.startsWith(storagePathPrefix))
+		if(!dest.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
 			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest;
 		
 		try {
@@ -181,7 +176,7 @@ public class LocalStorageImplementation extends Storage {
 			fileMetadata.setFile(true);
 			addFileMetadataToStorage(dest, fileMetadata);
 		
-		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException e) {
+		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
 			System.out.println(e.getMessage());
 		}
 		
@@ -203,17 +198,15 @@ public class LocalStorageImplementation extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
-		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
-		
-		if(!filePath.startsWith(storagePathPrefix))
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
 			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
-		if(!newDest.startsWith(storagePathPrefix))
+		
+		if(!newDest.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
 			newDest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + newDest;
 		
-		try {
-			
+		try {			
 			moveFileMetadata(filePath, newDest);
-			FileUtils.moveToDirectory(new File(filePath), new File(newDest), false);
+			FileUtils.moveToDirectory(new File(filePath), new File(newDest), false);	
 			
 		} catch (DirectoryException | NotFound | IOException e) {
 			System.out.println(e.getMessage());
@@ -226,20 +219,19 @@ public class LocalStorageImplementation extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
-		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 		
-		if(!filePath.startsWith(storagePathPrefix))
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
 			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
 		
-		try {
-			
+		try {			
 			removeFileMetadataFromStorage(filePath);
+			remove(new File(filePath));
 			
 		} catch (NotFound e) {
-			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
 		
-		remove(new File(filePath));
+		
 	}
 	
 	private void remove(File file) throws StorageConnectionException {
@@ -265,13 +257,12 @@ public class LocalStorageImplementation extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
-		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
-		if(!filePath.startsWith(storagePathPrefix))
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
 			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
 		
 		try {
 			// ako u direktorijumu vec postoji fajl sa imenom newName, konkateniramo ga sa '*'
-			newName = super.renameFileMetadata(filePath, newName);
+			newName = renameFileMetadata(filePath, newName);
 			
 			Path oldDest = Paths.get(filePath);
 			Path newDest = oldDest.getParent().resolve( newName );
@@ -279,7 +270,7 @@ public class LocalStorageImplementation extends Storage {
 			FileUtils.moveToDirectory(new File(oldDest.toString()), new File(newDest.toString()), false);
 			
 		} catch (NotFound | IOException e) {
-			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -292,18 +283,16 @@ public class LocalStorageImplementation extends Storage {
 		Path srcPath = Paths.get(filePath);
 		Path destPath = Paths.get(dest);
 		
-		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
-		String userDirectory = System.getProperty("user.home");
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+			srcPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath()).resolve(srcPath);
 		
-		if(!filePath.startsWith(storagePathPrefix))
-			srcPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath()).resolve(filePath);
-		
-		if(!dest.startsWith(userDirectory))
-			destPath = Paths.get(userDirectory).resolve(destPath.getFileName());
+		if(!dest.startsWith(FileUtils.getUserDirectoryPath()))
+			destPath = Paths.get(FileUtils.getUserDirectoryPath()).resolve(destPath);
 		
 		
 		try {
 			FileUtils.copyToDirectory(new File(srcPath.toString()), new File(destPath.toString()));
+			
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
 		}
@@ -315,22 +304,20 @@ public class LocalStorageImplementation extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
-		try {
-			
+		try {			
 			copyFileMetadata(filePath, dest);
 		
 		} catch (StorageSizeException | NotFound | DirectoryException e) {
-			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
 		
 		Path srcPath = Paths.get(filePath);
 		Path destPath = Paths.get(dest);
-		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
 
-		if(!filePath.startsWith(storagePathPrefix))
-			srcPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath()).resolve(filePath);
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+			srcPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath()).resolve(srcPath);
 		
-		if(!dest.startsWith(storagePathPrefix))
+		if(!dest.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
 			destPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath()).resolve(destPath);
 		
 		try {
@@ -347,9 +334,8 @@ public class LocalStorageImplementation extends Storage {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
-		
-		String storagePathPrefix = StorageManager.getInstance().getStorageInformation().getStoragePathPrefix();
-		if(!filePath.startsWith(storagePathPrefix))
+
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
 			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
 		
 		File file = new File(filePath);
@@ -371,9 +357,8 @@ public class LocalStorageImplementation extends Storage {
 			fileOut.write(text);
 	    
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
-	    }
-		
+			e.printStackTrace();
+	    }		
 	}
 	
 	@Override
@@ -385,12 +370,13 @@ public class LocalStorageImplementation extends Storage {
 				
 		// ne radimo proveru za C:\Users\Luka, vec za C:\Users\Luka\...\...\...
 		Path path = Paths.get(dest.substring(userDirectoryPath.length()));
-		Path currPath = Paths.get(userDirectoryPath);		
+		Path currPath = Paths.get(userDirectoryPath);	
+		
 		Iterator<Path> iterator = path.iterator();
 
 		while(iterator.hasNext()) {
 
-			currPath = currPath.resolve(iterator.next().toString());
+			currPath = currPath.resolve(iterator.next());
 			File directory = new File(currPath.toString());
 			int numOfDefaultFiles = 0;
 			
@@ -415,12 +401,11 @@ public class LocalStorageImplementation extends Storage {
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		
 		if(obj instanceof StorageInformation) { 
+			
 			path = StorageManager.getInstance().getStorageInformation().getStorageDirectory().getAbsolutePath() + File.separator + StorageInformation.storageInformationJSONFileName;
 		
 			StorageManager.getInstance().getStorageInformation().setCurrentDirectory(StorageManager.getInstance().getStorageInformation().getDatarootDirectory());
-			StorageManager.getInstance().getStorageInformation().dismantleStorageTreeStructure();
 			jsonString = gson.toJson((StorageInformation) obj);
-			StorageManager.getInstance().getStorageInformation().buildStorageTreeStructure();
 		}
 		
 		if(path == null || jsonString == null)
@@ -431,7 +416,7 @@ public class LocalStorageImplementation extends Storage {
 			fileOut.write(jsonString);
 	    
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
+			e.printStackTrace();
 	    }
 	
 	}
@@ -452,12 +437,11 @@ public class LocalStorageImplementation extends Storage {
 		
 			if(obj instanceof StorageInformation) {
 				StorageManager.getInstance().setStorageInformation(gson.fromJson(reader, StorageInformation.class));
-				StorageManager.getInstance().getStorageInformation().buildStorageTreeStructure();
 				StorageManager.getInstance().getStorageInformation().setStorageConnected(true);
 			}			
 
 		} catch (IOException e) {
-			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
 		
 		
