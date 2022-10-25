@@ -1,12 +1,14 @@
 package googleDriveStorage;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,6 +18,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.io.FileUtils;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -360,7 +364,7 @@ public class GoogleDriveStorage extends Storage {
 	    }				
 	}
 
-	@Override
+	@Override // resi ako folder ima file limit!!!!
 	public void remove(String filePath) throws StorageConnectionException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
@@ -460,9 +464,80 @@ public class GoogleDriveStorage extends Storage {
 	}
 
 	@Override
-	public void download(String filePath, String downloadDest) throws NotFound, StorageConnectionException {
-		// TODO Auto-generated method stub
+	public boolean download(String filePath, String downloadDest) throws NotFound, StorageConnectionException, PathException {
 		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
+			throw new StorageConnectionException("Disconnect from the current storage in order to create the new  one storage!");
+		
+		if(!downloadDest.startsWith(FileUtils.getUserDirectoryPath()))
+			throw new PathException(String.format("Storage must reside in the User's directory! Make sure that storage path starts with '%s'", FileUtils.getUserDirectoryPath()));
+		
+		java.io.File downloadDestLocalFile = new java.io.File(downloadDest);
+		if(!downloadDestLocalFile.exists())
+			downloadDestLocalFile.mkdirs();
+		
+		File googleDriveFile = getLastFileOnPath(Paths.get(filePath), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
+		
+		if(googleDriveFile.getMimeType().equals("application/vnd.google-apps.folder")) 
+			return download(googleDriveFile, downloadDest + java.io.File.separator + googleDriveFile.getName());
+		
+		else if(googleDriveFile.getMimeType().equals("application/vnd.google-apps.document")) {
+			try {
+				
+				java.io.File localFile = new java.io.File(downloadDest + java.io.File.separator + googleDriveFile.getName());
+				if(!localFile.exists())
+					localFile.createNewFile();
+				
+				OutputStream outputStream = new ByteArrayOutputStream();
+				service.files().export(googleDriveFile.getId(), "application/pdf").executeMediaAndDownloadTo(outputStream);
+				FileWriter fileWriter = new FileWriter(localFile);
+            	fileWriter.write(String.valueOf(outputStream));
+           		fileWriter.close();
+          		outputStream.close();
+          		
+			} catch (IOException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	private boolean download(File file, String destPath) {
+		
+		java.io.File downloadDestLocalFile = new java.io.File(destPath);
+		if(!downloadDestLocalFile.exists())
+			downloadDestLocalFile.mkdir();
+		
+		List<File> list = getFilesByParentId(file.getId());
+		for(File f : list) {
+			
+			if(f.getMimeType().equals("application/vnd.google-apps.folder")) 
+				return download(f, destPath + java.io.File.separator + f.getName());
+			
+			else if(f.getMimeType().equals("application/vnd.google-apps.document")) {
+				try {
+					
+					java.io.File localFile = new java.io.File(destPath + java.io.File.separator + f.getName());
+					if(!localFile.exists())
+						localFile.createNewFile();
+					
+					OutputStream outputStream = new ByteArrayOutputStream();
+					service.files().export(f.getId(), "application/pdf").executeMediaAndDownloadTo(outputStream);
+					FileWriter fileWriter = new FileWriter(localFile);
+	            	fileWriter.write(String.valueOf(outputStream));
+	           		fileWriter.close();
+	          		outputStream.close();
+	          		
+				} catch (IOException e) {
+					e.printStackTrace();
+					return false;
+				}
+			}
+		}
+		
+		return true;
 	}
 
 	@Override
@@ -474,7 +549,8 @@ public class GoogleDriveStorage extends Storage {
 	@Override
 	public void writeToFile(String filePath, String text, boolean append)
 			throws NotFound, StorageSizeException, StorageConnectionException {
-		// TODO Auto-generated method stub
+
+		
 		
 	}
 	
