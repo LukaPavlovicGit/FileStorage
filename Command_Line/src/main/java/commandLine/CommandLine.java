@@ -30,7 +30,7 @@ public class CommandLine {
 				e.printStackTrace();
 			}
 			Storage storage = StorageManager.getStorage();
-			Map<FileMetadata, List<FileMetadata>> resultSet = new HashMap<>();
+			Map<String, List<FileMetadata>> resultSet = new HashMap<>();
 			
 			scanner = new Scanner(System.in);
 	        String command = "";	        	        
@@ -239,9 +239,9 @@ public class CommandLine {
 		            		
 		            		resultSet = storage.listDirectory(src, onlyDirs, onleFiles, searchSubDirecories, ext, pref, suf, sub);
 	            		}	            		
-	            		for(FileMetadata f : resultSet.keySet()) {
-	            			System.out.println(f.getAbsolutePath() + " :");
-	            			for(FileMetadata ff : resultSet.get(f))
+	            		for(String relativePath : resultSet.keySet()) {
+	            			System.out.println(relativePath + " :");
+	            			for(FileMetadata ff : resultSet.get(relativePath))
 	            				System.out.println("\t" + ff.getAbsolutePath());
 	            			
 	            			System.out.println();
@@ -267,9 +267,9 @@ public class CommandLine {
 	            			resultSet = storage.resultSort(resultSet, byName, byCreation, byModification, asc, desc);
 	            		}
 	            		
-	            		for(FileMetadata f : resultSet.keySet()) {
-	            			System.out.println(f.getAbsolutePath() + " :");
-	            			for(FileMetadata ff : resultSet.get(f))
+	            		for(String relativePath : resultSet.keySet()) {
+	            			System.out.println(relativePath + " :");
+	            			for(FileMetadata ff : resultSet.get(relativePath))
 	            				System.out.println("\t" + ff.getAbsolutePath());
 	            			
 	            			System.out.println();
@@ -317,9 +317,9 @@ public class CommandLine {
 	            		}	            		
 	            		
 	            		resultSet = storage.resultFilter(resultSet, attributes, periods);
-	            		for(FileMetadata f : resultSet.keySet()) {
-	            			System.out.println(f.getAbsolutePath() + ":");
-	            			for(FileMetadata ff : resultSet.get(f))
+	            		for(String relativePath : resultSet.keySet()) {
+	            			System.out.println(relativePath + ":");
+	            			for(FileMetadata ff : resultSet.get(relativePath))
 	            				System.out.println("\t" + ff.getAbsolutePath());
 	            			
 	            			System.out.println();
