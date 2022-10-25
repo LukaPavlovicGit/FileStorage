@@ -238,8 +238,8 @@ public class GoogleDriveStorage extends Storage {
 			
 			fileMetadata = new FileMetadata();
 			fileMetadata.setDirectory(true);
-			fileMetadata.setNumOfFilesLimit( filesLimit.length>0 ? filesLimit[0] : null );
-			addFileMetadataToStorage(dest, fileMetadata);
+			fileMetadata.setNumOfFilesLimit( (filesLimit.length > 0) ? filesLimit[0] : null );
+			addFileMetadataToStorage(dest, fileMetadata); 
 			
 		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
 			e.printStackTrace();
@@ -540,10 +540,91 @@ public class GoogleDriveStorage extends Storage {
 		return true;
 	}
 
-	@Override
+	@Override // obezbediti i funcionalnist i ako destinacija ne postoji
 	public void copyFile(String filePath, String dest) throws NotFound, StorageConnectionException {
-		// TODO Auto-generated method stub
 		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
+		
+		
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + java.io.File.separator + filePath;
+		
+		if(!dest.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + java.io.File.separator + dest;
+		
+		File srcFile = getLastFileOnPath(Paths.get(filePath), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
+		File destFile = getLastFileOnPath(Paths.get(dest), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
+		
+		if(destFile == null) { // treba implementirati da ako neki directory na putanji da se napravi (i u specifikaciji i ina local/remote storage)
+			try {
+				createDirectory(dest);
+				destFile = getLastFileOnPath(Paths.get(dest), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
+				
+			} catch (StorageSizeException | NamingPolicyException | DirectoryException | StorageConnectionException e) {
+				e.printStackTrace();
+			}
+			
+			if(destFile == null)
+				System.out.println("JBG NESTO SI ZAJEBO");
+		}
+		
+		try {
+			copyFileMetadata(filePath, dest);
+		} catch (NotFound | DirectoryException | StorageSizeException e) {
+			e.printStackTrace();
+		}
+		
+		if(srcFile.getMimeType().equals("application/vnd.google-apps.folder")) {
+			if(copyFile(srcFile, dest))
+				System.out.println("Successfully copied!");
+			else
+				System.out.println("NJET Unuccessfully NOOOO!!");
+		}
+		
+		else if(srcFile.getMimeType().equals("application/vnd.google-apps.document")) {
+			 File copy = new File();
+			 copy.setParents(Collections.singletonList(destFile.getId()));
+			 copy.setName(srcFile.getName());
+			 
+			 try {
+				service.files().copy(destFile.getId(), copy).execute();
+			} catch (IOException e) {				
+				e.printStackTrace();
+			}
+		}
+
+	}
+	
+	private boolean copyFile(File srcFile, String dest) {
+				
+		List<File> toBeCopied = getFilesByParentId(srcFile.getId());
+		File destFile = getLastFileOnPath(Paths.get(dest), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
+		
+		for(File f : toBeCopied) {
+			
+			if(f.getMimeType().equals("application/vnd.google-apps.folder")) {
+				try {
+					createDirectory(dest + java.io.File.separator + f.getName());
+					copyFile(f, dest + java.io.File.separator + f.getName());
+				} catch (StorageSizeException | NamingPolicyException | DirectoryException	| StorageConnectionException e) {
+					e.printStackTrace();
+				}
+			}
+			else if(f.getMimeType().equals("application/vnd.google-apps.document")) {
+				 File copy = new File();
+				 copy.setParents(Collections.singletonList(destFile.getId()));
+				 copy.setName(srcFile.getName());
+				 
+				 try {
+					service.files().copy(destFile.getId(), copy).execute();
+				} catch (IOException e) {				
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		return true;
 	}
 
 	@Override
