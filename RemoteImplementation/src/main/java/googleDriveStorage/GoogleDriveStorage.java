@@ -24,6 +24,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -204,8 +205,7 @@ public class GoogleDriveStorage extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
 			throw new StorageConnectionException("Disconnection from the current storage is requiered in order to connect to the new one!");
 		
-		readFromJSON(new StorageInformation(), src);
-		
+		readFromJSON(new StorageInformation(), src);		
 		return (StorageManager.getInstance().getStorageInformation().isStorageConnected()==true) ? true : false;
 	}
 
@@ -259,8 +259,8 @@ public class GoogleDriveStorage extends Storage {
 			File file = new File();
 			file.setName(name);
 			file.setMimeType("application/vnd.google-apps.folder");
-			String parentId = getLastFileIdOnPath(parentPath, StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());			
-			file.setParents(Collections.singletonList(parentId));
+			File parent = getLastFileOnPath(parentPath, StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());			
+			file.setParents(Collections.singletonList(parent.getId()));
 			
 			service.files().create(file).setFields("id").execute();
 			
@@ -280,8 +280,7 @@ public class GoogleDriveStorage extends Storage {
 		
 		FileMetadata fileMetadata = null;
 		
-		try {
-			
+		try {			
 			fileMetadata = new FileMetadata();
 			fileMetadata.setFile(true);			
 			addFileMetadataToStorage(dest, fileMetadata);
@@ -298,13 +297,12 @@ public class GoogleDriveStorage extends Storage {
 		else
 			parentPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getRelativePath()).resolve(parentPath).getParent();		
 		
-		try {
-			
+		try {			
 			File file = new File();
 			file.setName(name);
 			file.setMimeType("application/vnd.google-apps.document");
-			String parentId = getLastFileIdOnPath(parentPath, StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());			
-			file.setParents(Collections.singletonList(parentId));
+			File parent = getLastFileOnPath(parentPath, StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());			
+			file.setParents(Collections.singletonList(parent.getId()));
 			
 			service.files().create(file).setFields("id").execute();
 			
@@ -335,43 +333,129 @@ public class GoogleDriveStorage extends Storage {
 			e.printStackTrace();
 		}
 		
-		String fileId = getLastFileIdOnPath(Paths.get(filePath), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
-		String folderId = getLastFileIdOnPath(Paths.get(newDest), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());		
+		File src = getLastFileOnPath(Paths.get(filePath), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
+		File dest = getLastFileOnPath(Paths.get(newDest), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());		
 		
 		try {
 			// Retrieve the existing parents to remove
-		    File file = service.files().get(fileId)
+		    File file = service.files().get(src.getId())
 		        .setFields("parents")
 		        .execute();
+		    
 		    StringBuilder previousParents = new StringBuilder();
 		    for (String parent : file.getParents()) {
 		      previousParents.append(parent);
 		      previousParents.append(',');
-		    }
-		   
+		    }		   
+		    
 		    // Move the file to the new folder
-		    file = service.files().update(fileId, null)
-	          .setAddParents(folderId)
+		    file = service.files().update(src.getId(), null)
+	          .setAddParents(dest.getId())
 	          .setRemoveParents(previousParents.toString())
 	          .setFields("id, parents")
 	          .execute();
 
 	    } catch (IOException e) {
 	      e.printStackTrace();
-	    }
-		
-		
+	    }				
 	}
 
 	@Override
-	public void remove(String filePath) throws NotFound, StorageConnectionException {
-		// TODO Auto-generated method stub
+	public void remove(String filePath) throws StorageConnectionException {
 		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
+		
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + java.io.File.separator + filePath;
+		
+		try {
+			removeFileMetadataFromStorage(filePath);
+		} catch (NotFound e) {			
+			e.printStackTrace();
+		}
+		
+		File f = getLastFileOnPath(Paths.get(filePath), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
+		
+		try {
+			if(f.getMimeType().equals("application/vnd.google-apps.folder"))
+				remove(f);			
+			else 		
+				service.files().delete(f.getId()).execute();							
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void remove(File directory) {
+		
+		try {
+			
+			List<File> files = getFilesByParentId(directory.getId());
+			
+			for(File f : files) {
+				if(f.getMimeType().equals("application/vnd.google-apps.folder")) 
+					remove(f);				
+				else 				
+					service.files().delete(f.getId()).execute();							
+			}					
+			service.files().delete(directory.getId()).execute();	
+		
+		} catch (IOException e) {			
+			e.printStackTrace();
+		}
 	}
 
 	@Override
-	public void rename(String filePath, String newName) throws NotFound, StorageConnectionException {
-		// TODO Auto-generated method stub
+	public boolean rename(String filePath, String newName) throws StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
+		
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + java.io.File.separator + filePath;
+		
+		
+		try {
+			// ako u direktorijumu vec postoji fajl sa imenom newName, konkateniramo ga sa '*'			
+			newName = renameFileMetadata(filePath, newName);			
+			File f = getLastFileOnPath(Paths.get(filePath), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());	
+			
+//			File updated = f.clone();
+//			updated.setName(newName);
+//								
+//			service.files().delete(f.getId());
+//			service.files().create(updated).setFields("id").execute();					
+//			
+		} catch(NotFound /*| IOException*/ e) {
+			e.printStackTrace();
+		}
+		
+		return true;
+		
+//		try {
+//		      // First retrieve the file from the API.
+//		      File file = service.files().get(fileId).execute();
+//
+//		      // File's new metadata.
+//		      file.setTitle(newTitle);
+//		      file.setDescription(newDescription);
+//		      file.setMimeType(newMimeType);
+//
+//		      // File's new content.
+//		      java.io.File fileContent = new java.io.File(newFilename);
+//		      FileContent mediaContent = new FileContent(newMimeType, fileContent);
+//
+//		      // Send the request to the API.
+//		      File updatedFile = service.files().update(fileId, file, mediaContent).execute();
+//
+//		      return updatedFile;
+//		    } catch (IOException e) {
+//		      System.out.println("An error occurred: " + e);
+//		      return null;
+//		    }
+//		  }
 		
 	}
 
@@ -527,21 +611,53 @@ public class GoogleDriveStorage extends Storage {
 		}
 	}
 	
+	private List<File> getFilesByParentId(String parentId){
+		
+		List<File> files = new ArrayList<File>();		
+	    String pageToken = null;
+	    
+		try {			
+		    do {
+		      FileList result = service.files().list()
+		    	  .setQ("'" + parentId + "'" + " in parents")
+		          .setSpaces("drive")
+		          .setFields("nextPageToken, files(id,size,mimeType,parents,name,trashed)")
+		          .setPageToken(pageToken)
+		          .execute();
+		      for (File file : result.getFiles()) {
+		        System.out.printf("Found file: %s (%s)\n",
+		            file.getName(), file.getId());
+		      }
+	
+		      files.addAll(result.getFiles());
+	
+		      pageToken = result.getNextPageToken();
+		    } while (pageToken != null);
+		
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		    		    
+		return files;		
+	}
+	
 	// path uvek treba biti oblika <storageName>\"rootDataDirectory"\...\...
 	// pocetna vrednost za parentID ce uvek treba biti ID od storge direktorijuma 
-	private String getLastFileIdOnPath(Path path, String parentID) {
+	private File getLastFileOnPath(Path path, String parentID) {
 		
 		Iterator<Path> iterator = path.iterator();
 		
 		if(!iterator.hasNext())
-			return parentID;
-		
+			return null;		
 		iterator.next();
+		
+		String nextDirName = null;
+		File ans = null;
 		
 		while(iterator.hasNext()) {
 			
-			String nextDirName = iterator.next().toString();
-			String pageToken = null;
+			nextDirName = iterator.next().toString();
+			String pageToken = null;			
 			
 			try {
 			    
@@ -554,18 +670,26 @@ public class GoogleDriveStorage extends Storage {
 			          .execute();
 			     
 			      if(result.getFiles() == null) 
-			    	  return parentID;
+			    	  return null;
 			      
 			      for (File file : result.getFiles()) {
 			        if(file.getName().equals(nextDirName)) {			        	
 			        	parentID = file.getId();
+			        	ans = file;
 			        	break;
-			        }
+			        }			        			        
 			      }
-				     	
+				  			        	  			      
 			      pageToken = result.getNextPageToken();
 			      
 			    } while (pageToken != null);
+		    	
+		      // ako na putanji nismo uspeli da nadjemo file sa trazenim imenom
+		      if(ans == null)
+		    	  return null;			      
+		      // ako smo stigli do kraja tokena, a nismo azurirali odgovor
+		      if(ans != null && !ans.getName().equals(nextDirName))
+		    	  return null;			  		    	
 			    
 		    }catch(IOException e) {
 		    	e.printStackTrace();
@@ -573,7 +697,7 @@ public class GoogleDriveStorage extends Storage {
 			
 		}
 		
-		return parentID;
+		return ans;
 	}
 
 }
