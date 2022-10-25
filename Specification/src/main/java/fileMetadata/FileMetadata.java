@@ -11,6 +11,7 @@ public class FileMetadata {
 	private String fileID;
 	private String name;
 	private String absolutePath;
+	private String relativePath;
 	private Long size = 0L;
 	private FileMetadata parent;
 	private Date timeCreated;
@@ -41,6 +42,7 @@ public class FileMetadata {
 		this.timeCreated = builder.timeCreated;
 		this.timeModified = builder.timeModified;
 		this.absolutePath = builder.absolutePath;
+		this.relativePath = builder.relativePath;
 		this.parent = builder.parent;
 		this.isFile = builder.isFile;
 		this.isDirectory = builder.isDirectory;
@@ -93,6 +95,14 @@ public class FileMetadata {
 		this.absolutePath = absolutePath;
 	}
 	
+	public String getRelativePath() {
+		return relativePath;
+	}
+
+	public void setRelativePath(String relativePath) {
+		this.relativePath = relativePath;
+	}
+
 	public Long getSize() {
 		return size;
 	}
@@ -237,6 +247,7 @@ public class FileMetadata {
 		private String fileID;
 		private String name;
 		private String absolutePath;
+		private String relativePath;
 		private FileMetadata parent;
 		private Date timeCreated;
 		private Date timeModified;
@@ -273,6 +284,10 @@ public class FileMetadata {
 		}
 		public FileMetadataBuilder withAbsolutePath(String absolutePath) {
 			this.absolutePath = absolutePath;
+			return this;
+		}
+		public FileMetadataBuilder withRelativePath(String relativePath) {
+			this.relativePath = relativePath;
 			return this;
 		}
 		public FileMetadataBuilder withParent(FileMetadata parent) {
