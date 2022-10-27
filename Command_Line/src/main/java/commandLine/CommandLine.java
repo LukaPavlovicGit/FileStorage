@@ -24,8 +24,8 @@ public class CommandLine {
 		
 		
 			try {
-				//Class.forName("localStorage.LocalStorageImplementation");
-				Class.forName("googleDriveStorage.GoogleDriveStorage");
+				Class.forName("localStorage.LocalStorageImplementation");
+				//Class.forName("googleDriveStorage.GoogleDriveStorage");
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -118,14 +118,15 @@ public class CommandLine {
 	            			if(storage.connectToStorage(commArray[1]))
 		            			System.out.println("Connected to storage successfully!");
 	            			
-	            			storage.createDirectory(dest, filesLimit);
+	            			if(!storage.createDirectory(dest, filesLimit))
+	            				System.out.println("Something went wrong!");
 	            		}
 	            	}
 	            	else if(commArray.length > 2 && commArray[0].equals("mkdirs")) {
 	            		String dest = commArray[1];
 	            		String[] subArr = Arrays.copyOfRange(commArray, 2, commArray.length);
 	            		Map<String, Integer> dirNameAndFilesLimit =	new HashMap<>();
-	            		
+	            		// <dirname1>,<num1> <dirname2>,<num2> <dirname3>,<num3> 
 	            		for(int i=0 ; i<subArr.length ; i++) {
 	            			if(!subArr[i].contains(",")) {
 	            				System.out.println("Command is not recognized...");
@@ -138,16 +139,20 @@ public class CommandLine {
 	            			try {
 	            				filesLimig = Integer.valueOf(subArr[i].split(",")[1].trim());
 	            			} catch (NumberFormatException e) {
-	            				System.out.println(e.getMessage());
-	            				continue;
+	            				System.out.println(String.format("Because of NumberFormatException, the folder '%s' has been assigned default file limit value! ", name));
+	            				filesLimig = 20;
 							}
 	            			dirNameAndFilesLimit.put(name, filesLimig);	            		
-	            		}	            		
-	            		storage.createDirectories(dest, dirNameAndFilesLimit);	
+	            		}
+	            		
+	            		if(!storage.createDirectories(dest, dirNameAndFilesLimit))
+	            			System.out.println("Something went wrong!");
+	            		            	
 	            	}
 	            	else if(commArray.length == 2 && commArray[0].equals("mkfile")) {
 	            		String dest = commArray[1];
-	            		storage.createFile(dest);
+	            		if(!storage.createFile(dest))
+	            			System.out.println("Something went wrong!");
 	            	}
 	            	else if(commArray.length > 2 && commArray[0].equals("mkfiles")) {
 	            		String dest = commArray[1];
@@ -157,16 +162,19 @@ public class CommandLine {
 	            		for(String name : subArr)
 	            			names.add( name.replaceAll("[^a-zA-Z0-9\\.\\-]", "") );	            	
 	            		
-	            		storage.createFiles(dest, names);
+	            		if(!storage.createFiles(dest, names))
+	            			System.out.println("Something went wrong!");
 	            	}
 	            	else if(commArray.length == 3 && commArray[0].equals("move")) {
 	            		String filePath = commArray[1];
 	            		String newDest = commArray[2];
-	            		storage.move(filePath, newDest);
+	            		if(storage.move(filePath, newDest))
+	            			System.out.println("File has been moved!");
 	            	}
 	            	else if(commArray.length == 2 && commArray[0].equals("del")) {
 	            		String filePath = commArray[1];
-	            		storage.remove(filePath);
+	            		if(storage.remove(filePath))
+	            			System.out.println("File has been deleted!");
 	            	}
 	            	else if(commArray.length == 3 && commArray[0].equals("rename")) {
 	            		String filePath = commArray[1];
