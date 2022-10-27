@@ -639,9 +639,9 @@ public abstract class Storage {
 		}
 		
 		FileMetadata srcFileClone = srcFile.clone();		
-		
-		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kopira
 		List<FileMetadata> list = storageTreeStracture.get(destDir.getRelativePath());
+		
+		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kopira		
 		for(int i=0 ; i < list.size() ; i++) {
 			
 			FileMetadata f = list.get(i);
@@ -652,14 +652,13 @@ public abstract class Storage {
 			}
 		}
 		
-		srcFileClone.setParent(destDir);
-		srcFileClone.setAbsolutePath(destDir.getAbsolutePath() + File.separator + srcFileClone.getName());
-		srcFileClone.setRelativePath(destDir.getRelativePath() + File.separator + srcFileClone.getName());
-		storageTreeStracture.get(destDir.getRelativePath()).add(srcFileClone);
-		
 		if(srcFileClone.isDirectory()) 
 			pathClone(srcFile.getRelativePath(), destDir.getRelativePath() + File.separator + srcFileClone.getName(), srcFileClone, storageTreeStracture);
 		
+		srcFileClone.setParent(destDir);
+		srcFileClone.setAbsolutePath(destDir.getAbsolutePath() + File.separator + srcFileClone.getName());
+		srcFileClone.setRelativePath(destDir.getRelativePath() + File.separator + srcFileClone.getName());
+		storageTreeStracture.get(destDir.getRelativePath()).add(srcFileClone);						
 	}
 	
 	private void pathClone(String fromKey, String toKey, FileMetadata parent, Map<String, List<FileMetadata>> storageTreeStracture) {
@@ -670,14 +669,14 @@ public abstract class Storage {
 			
 			FileMetadata clone = f.clone();
 			
+			if(clone.isDirectory())
+				pathClone(f.getRelativePath(), toKey + File.separator + clone.getName(), clone, storageTreeStracture);	
+									
 			clone.setParent(parent);
 			clone.setAbsolutePath(parent.getAbsolutePath() + File.separator + clone.getName());
-			clone.setRelativePath(parent.getRelativePath() + File.separator + clone.getName());
+			clone.setRelativePath(parent.getRelativePath() + File.separator + clone.getName());			
 			
-			storageTreeStracture.get(toKey).add(clone);
-			
-			if(clone.isDirectory())
-				pathClone(f.getRelativePath(), toKey + File.separator + clone.getName(), clone, storageTreeStracture);						
+			storageTreeStracture.get(toKey).add(clone);											
 		}		
 	}
 	
