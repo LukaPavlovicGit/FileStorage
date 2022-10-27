@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
@@ -274,13 +275,14 @@ public class LocalStorageImplementation extends Storage {
 		
 		file.delete();
 	}
-
+	
 	@Override
 	public boolean rename(String src, String newName) throws StorageConnectionException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
+		newName = Paths.get(newName).getFileName().toString();
 		
 		try {
 			// ako u direktorijumu vec postoji fajl sa imenom newName, konkateniramo ga sa '*'
@@ -299,19 +301,13 @@ public class LocalStorageImplementation extends Storage {
 		else if(src.startsWith(dataRootRelativePath)) 
 			src = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + src.substring(dataRootRelativePath.length() + File.separator.length());
 	
-		Path oldDest = Paths.get(src);
-		Path newDest = oldDest.getParent().resolve(newName);
+		Path source  = Paths.get(src);
+		Path newdir = source .getParent().resolve(newName);
 		
-		try {
-			FileUtils.moveToDirectory(new File(oldDest.toString()), new File(newDest.toString()), false);
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
-		}
-		
-		
-		return true;
+		File file = new File(source.toString());
+		File rename = new File(newdir.toString());
+	
+		return file.renameTo(rename);
 	}
 
 	@Override
@@ -348,7 +344,7 @@ public class LocalStorageImplementation extends Storage {
 	}
 	
 	@Override
-	public void copyFile(String src, String dest) throws StorageConnectionException{
+	public boolean copyFile(String src, String dest) throws StorageConnectionException{
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -358,7 +354,7 @@ public class LocalStorageImplementation extends Storage {
 		
 		} catch (StorageSizeException | NotFound | DirectoryException e) {
 			e.printStackTrace();
-			return;
+			return false;
 		}
 		
 		String dataRootAbsolutePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getAbsolutePath();
@@ -382,12 +378,14 @@ public class LocalStorageImplementation extends Storage {
 		
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
-			return;
+			return false;
 		}
+		
+		return true;
 	}
 	
 	@Override
-	public void writeToFile(String src, String text, boolean append) throws NotFound, StorageConnectionException, StorageSizeException {
+	public boolean writeToFile(String src, String text, boolean append) throws NotFound, StorageConnectionException, StorageSizeException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -423,7 +421,10 @@ public class LocalStorageImplementation extends Storage {
 	    
 		} catch (Exception e) {
 			e.printStackTrace();
+			return false;			
 	    }		
+		
+		return true;
 	}
 	
 	@Override
