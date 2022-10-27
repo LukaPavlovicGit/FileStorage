@@ -778,7 +778,7 @@ public abstract class Storage {
 		return true;
 	}
 	
-	private Path getRelativePath(String path) {
+	protected Path getRelativePath(String path) {
 		
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		String dataRootAbsolutePath = storageInformation.getDatarootDirectory().getAbsolutePath();
