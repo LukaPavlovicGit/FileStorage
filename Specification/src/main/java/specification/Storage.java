@@ -100,72 +100,29 @@ public abstract class Storage {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
-		
-		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
-		
+					
 		if(dest.equals("cd..")) {
-			if(storageInformation.getCurrentDirectory().isStorage())
+			if(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().isStorage())
 				return;
 
-			storageInformation.setCurrentDirectory(storageInformation.getCurrentDirectory().getParent());
+			StorageManager.getInstance().getStorageInformation().setCurrentDirectory(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getParent());
 			return;
 		}
-				
-		String dataRootAbsolutePath = storageInformation.getDatarootDirectory().getAbsolutePath();
-		String dataRootRelativePath = storageInformation.getDatarootDirectory().getRelativePath();
-		Path relativePath = null;
+								
+		FileMetadata directory = getLastFileMetadataOnPath(getRelativePath(dest), StorageManager.getInstance().getStorageInformation().getStorageTreeStructure());
 		
-		// racunamo relativnu putanju u odnosu na trenutni direktorijum	
-		if(!dest.startsWith(dataRootAbsolutePath) && !dest.startsWith(dataRootRelativePath)) 
-			relativePath = Paths.get(storageInformation.getCurrentDirectory().getRelativePath()).resolve((Paths.get(dest).getNameCount() > 1) ? Paths.get(dest).getParent().toString() : "");
-		
-		else {
-			dest = dest.substring( ((dest.startsWith(dataRootAbsolutePath)==true) ? dataRootAbsolutePath.length() : dataRootRelativePath.length()) + File.separator.length());
-			relativePath = Paths.get(storageInformation.getDatarootDirectory().getRelativePath()).resolve( (Paths.get(dest).getNameCount() > 1) ? Paths.get(dest).getParent().toString() : "" );
-		
-			 /* npr. ako je:
-									dst = C:\Users\Luka\Desktop\storage\dataRootDirectory\dir1\dir2 || storage\dataRootDirectory\dir1\dir2
-				   dataRootAbsolutePath = C:\Users\Luka\Desktop\storage\dataRootDirectory 
-				   			   novo dst = dir1\dir2
-			               relativePath = storage\dataRootDirectory\dir1
-			 */			
-		}
-		
-		FileMetadata parent = getLastFileMetadataOnPath(relativePath, storageInformation.getStorageTreeStructure());
-		
-		if(parent != null) 
-			storageInformation.setCurrentDirectory(parent);
-		else 
+		if(directory == null)
 			throw new NotFound("Location does not exist!");
+		
+		StorageManager.getInstance().getStorageInformation().setCurrentDirectory(directory);		
 	}
 	
 	public boolean find(String src) throws StorageConnectionException { // hit
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
-		
-		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
-		String dataRootAbsolutePath = storageInformation.getDatarootDirectory().getAbsolutePath();
-		String dataRootRelativePath = storageInformation.getDatarootDirectory().getRelativePath();
-		Path relativePath = null;
-		
-		// racunamo relativnu putanju u odnosu na trenutni direktorijum	
-		if(!src.startsWith(dataRootAbsolutePath) && !src.startsWith(dataRootRelativePath)) 
-			relativePath = Paths.get(storageInformation.getCurrentDirectory().getRelativePath()).resolve((Paths.get(src).getNameCount() > 1) ? Paths.get(src).getParent().toString() : "");
-		
-		else {
-			src = src.substring( ((src.startsWith(dataRootAbsolutePath)==true) ? dataRootAbsolutePath.length() : dataRootRelativePath.length()) + File.separator.length());
-			relativePath = Paths.get(storageInformation.getDatarootDirectory().getRelativePath()).resolve( (Paths.get(src).getNameCount() > 1) ? Paths.get(src).getParent().toString() : "" );
-		
-			 /* npr. ako je:
-									dst = C:\Users\Luka\Desktop\storage\dataRootDirectory\dir1\dir2 || storage\dataRootDirectory\dir1\dir2
-				   dataRootAbsolutePath = C:\Users\Luka\Desktop\storage\dataRootDirectory 
-				   			   novo dst = dir1\dir2
-			               relativePath = storage\dataRootDirectory\dir1
-			 */			
-		}		
 
-		return checkPath(relativePath, storageInformation.getStorageTreeStructure());
+		return checkPath(getRelativePath(src), StorageManager.getInstance().getStorageInformation().getStorageTreeStructure());
 	}
 	
 	public Map<String, Boolean> find(List<String> filePaths) throws StorageConnectionException { // hit -l
@@ -211,19 +168,8 @@ public abstract class Storage {
 
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<String, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();	
-		Path path = null;
-		String dataRootAbsolutePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getAbsolutePath();
-		String dataRootRelativePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath();		
-		
-		if(!src.startsWith(dataRootAbsolutePath) && !src.startsWith(dataRootRelativePath)) 
-			path = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getRelativePath()).resolve(Paths.get(src));
-		
-		else {
-			src = src.substring( ((src.startsWith(dataRootAbsolutePath)==true) ? dataRootAbsolutePath.length() : dataRootRelativePath.length()) + File.separator.length());
-			path = Paths.get(StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath()).resolve(Paths.get(src));		
-		}
-		
-		FileMetadata directory = getLastFileMetadataOnPath(path, storageTreeStracture);
+
+		FileMetadata directory = getLastFileMetadataOnPath(getRelativePath(src), storageTreeStracture);
 		if(directory == null)
 			throw new NotFound("Source directory not found!");
 		
@@ -501,27 +447,8 @@ public abstract class Storage {
 					throw new UnsupportedFileException("Unsupported file!");
 			}
 		}
-		String dataRootAbsolutePath = storageInformation.getDatarootDirectory().getAbsolutePath();
-		String dataRootRelativePath = storageInformation.getDatarootDirectory().getRelativePath();
-		Path relativePath = null;
 		
-		// racunamo relativnu putanju u odnosu na trenutni direktorijum	
-		if(!dest.startsWith(dataRootAbsolutePath) && !dest.startsWith(dataRootRelativePath)) 
-			relativePath = Paths.get(storageInformation.getCurrentDirectory().getRelativePath()).resolve((Paths.get(dest).getNameCount() > 1) ? Paths.get(dest).getParent().toString() : "");
-		
-		else {
-			dest = dest.substring( ((dest.startsWith(dataRootAbsolutePath)==true) ? dataRootAbsolutePath.length() : dataRootRelativePath.length()) + File.separator.length());
-			relativePath = Paths.get(storageInformation.getDatarootDirectory().getRelativePath()).resolve( (Paths.get(dest).getNameCount() > 1) ? Paths.get(dest).getParent().toString() : "" );
-		
-			 /* npr. ako je:
-									dst = C:\Users\Luka\Desktop\storage\dataRootDirectory\dir1\dir2 || storage\dataRootDirectory\dir1\dir2
-				   dataRootAbsolutePath = C:\Users\Luka\Desktop\storage\dataRootDirectory 
-				   			   novo dst = dir1\dir2
-			               relativePath = storage\dataRootDirectory\dir1
-			 */			
-		}
-		
-		FileMetadata parent = getLastFileMetadataOnPath(relativePath, storageTreeStracture);
+		FileMetadata parent = getLastFileMetadataOnPath(getRelativePath(dest), storageTreeStracture);
 		
 		// implementiraj da se naprave svi direktorijumi na putanji ako ne postoje
 		if(parent == null)
@@ -558,8 +485,7 @@ public abstract class Storage {
 			}
 		}
 		
-		storageTreeStracture.get(parent.getRelativePath()).add(fileMetadata);
-		
+		storageTreeStracture.get(parent.getRelativePath()).add(fileMetadata);		
 		return true;
 	}
 	
@@ -567,29 +493,9 @@ public abstract class Storage {
 				
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<String, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();
-	
+								
+		FileMetadata file = getLastFileMetadataOnPath(getRelativePath(dest), storageTreeStracture);
 		
-		String dataRootAbsolutePath = storageInformation.getDatarootDirectory().getAbsolutePath();
-		String dataRootRelativePath = storageInformation.getDatarootDirectory().getRelativePath();
-		Path relativePath = null;
-
-		// racunamo relativnu putanju u odnosu na trenutni direktorijum	
-		if(!dest.startsWith(dataRootAbsolutePath) && !dest.startsWith(dataRootRelativePath)) 
-			relativePath = Paths.get(storageInformation.getCurrentDirectory().getRelativePath()).resolve(Paths.get(dest));
-		
-		else {
-			dest = dest.substring( ((dest.startsWith(dataRootAbsolutePath)==true) ? dataRootAbsolutePath.length() : dataRootRelativePath.length()) + File.separator.length());
-			relativePath = Paths.get(storageInformation.getDatarootDirectory().getRelativePath()).resolve(Paths.get(dest));
-		
-			 /* npr. ako je:
-									dst = C:\Users\Luka\Desktop\storage\dataRootDirectory\dir1\dir2 || storage\dataRootDirectory\dir1\dir2
-				   dataRootAbsolutePath = C:\Users\Luka\Desktop\storage\dataRootDirectory 
-				   			   novo dst = dir1\dir2
-			               relativePath = storage\dataRootDirectory\dir1
-			 */			
-		}
-			
-		FileMetadata file = getLastFileMetadataOnPath(relativePath, storageTreeStracture);
 		if(file == null)
 			throw new NotFound("Path does not exist!");
 		
@@ -599,39 +505,11 @@ public abstract class Storage {
 	
 	protected boolean moveFileMetadata(String src, String newDest) throws NotFound, DirectoryException {
 		
-		Path srcRelativePath = null;
-		Path newDestRelativePath = null;
-		Map<String, List<FileMetadata>> storageTreeStracture = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure();		
-		
-		String dataRootAbsolutePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getAbsolutePath();
-		String dataRootRelativePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath();
-		
-		// racunamo relativnu putanju u odnosu na trenutni direktorijum	
-		if(!src.startsWith(dataRootAbsolutePath) && !src.startsWith(dataRootRelativePath)) 
-			srcRelativePath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getRelativePath()).resolve(Paths.get(src));
-		
-		else {
-			src = src.substring( ((src.startsWith(dataRootAbsolutePath)==true) ? dataRootAbsolutePath.length() : dataRootRelativePath.length()) + File.separator.length());
-			srcRelativePath = Paths.get(StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath()).resolve(Paths.get(src));
-		
-			 /* npr. ako je:
-									dst = C:\Users\Luka\Desktop\storage\dataRootDirectory\dir1\dir2 || storage\dataRootDirectory\dir1\dir2
-				   dataRootAbsolutePath = C:\Users\Luka\Desktop\storage\dataRootDirectory 
-				   			   novo dst = dir1\dir2
-			               relativePath = storage\dataRootDirectory\dir1
-			 */			
-		}
 	
-		if(!newDest.startsWith(dataRootAbsolutePath) && !newDest.startsWith(dataRootRelativePath)) 
-			newDestRelativePath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getRelativePath()).resolve(Paths.get(newDest));
-		
-		else {
-			newDest = newDest.substring( ((newDest.startsWith(dataRootAbsolutePath)==true) ? dataRootAbsolutePath.length() : dataRootRelativePath.length()) + File.separator.length());
-			newDestRelativePath = Paths.get(StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath()).resolve(Paths.get(newDest));		
-		}
-		
-		FileMetadata srcFile = getLastFileMetadataOnPath(srcRelativePath, storageTreeStracture);
-		FileMetadata destFile = getLastFileMetadataOnPath(newDestRelativePath, storageTreeStracture);
+		Map<String, List<FileMetadata>> storageTreeStracture = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure();		
+
+		FileMetadata srcFile = getLastFileMetadataOnPath(getRelativePath(src), storageTreeStracture);
+		FileMetadata destFile = getLastFileMetadataOnPath(getRelativePath(newDest), storageTreeStracture);
 		
 		if(srcFile == null)
 			throw new NotFound("File path not correct!");
@@ -654,7 +532,8 @@ public abstract class Storage {
 				break;
 			}
 		}
-			
+		
+		srcFile.setParent(destFile);
 		storageTreeStracture.get(srcFile.getParent().getRelativePath()).remove(srcFile);
 		storageTreeStracture.get(destFile.getRelativePath()).add(srcFile);		
 		return true;
@@ -663,54 +542,44 @@ public abstract class Storage {
 	
 	protected String renameFileMetadata(String src, String newName) throws NotFound{
 		
-		Path relativePath = null;
 		Map<String, List<FileMetadata>> storageTreeStracture = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure();
 		
-		String dataRootAbsolutePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getAbsolutePath();
-		String dataRootRelativePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath();		
+		FileMetadata file = getLastFileMetadataOnPath(getRelativePath(src), storageTreeStracture);
 		
-		if(!src.startsWith(dataRootAbsolutePath) && !src.startsWith(dataRootRelativePath)) 
-			relativePath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getRelativePath()).resolve(Paths.get(src));
-		
-		else {
-			src = src.substring( ((src.startsWith(dataRootAbsolutePath)==true) ? dataRootAbsolutePath.length() : dataRootRelativePath.length()) + File.separator.length());
-			relativePath = Paths.get(StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath()).resolve(Paths.get(src));		
-		}
-		
-		FileMetadata file = getLastFileMetadataOnPath(relativePath, storageTreeStracture);
 		if(file == null)
 			throw new NotFound("File path not correct!");
 		
-		List<FileMetadata> adjecent = null;
 		String oldKey = "";
-		boolean flag = false;
 		
-		if(file.isDirectory()) {
-			oldKey = file.getRelativePath();
-			adjecent = storageTreeStracture.get(file.getRelativePath());			
-		}
+		if(file.isDirectory()) 
+			oldKey = file.getRelativePath();				
 		
-		
+
 		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se premesta
-		for(FileMetadata f : storageTreeStracture.get(file.getParent().getRelativePath())) {
+		List<FileMetadata> list = storageTreeStracture.get(file.getParent().getRelativePath());
+		for(int i = 0 ; i < list.size() ; i++) {
+			
+			FileMetadata f = list.get(i);
+			
 			if(f.getName().startsWith(newName) && f.getName().endsWith(newName)) {
-				newName += "*";				
-				flag = true;
+				newName += "*";
+				i = 0;
 			}
 		}
+		
+		
+		if(file.isDirectory()) 						
+			pathFix(oldKey, file.getParent().getRelativePath() + File.separator + newName, storageTreeStracture);	
 		
 		file.setName(newName);
 		file.setTimeModified(new Date());
 		file.setAbsolutePath(file.getParent().getAbsolutePath() + File.separator + newName);
 		file.setRelativePath(file.getParent().getRelativePath() + File.separator + newName);
 		
-		if(adjecent != null && flag) 						
-			return (pathFix(oldKey, file.getRelativePath(), storageTreeStracture)==true) ? newName : null;				
-		
 		return newName;
 	}
 	
-	private boolean pathFix(String oldKey, String newKey, Map<String, List<FileMetadata>> storageTreeStracture) {
+	private void pathFix(String oldKey, String newKey, Map<String, List<FileMetadata>> storageTreeStracture) {
 		
 		List<FileMetadata> list = storageTreeStracture.get(oldKey);
 		storageTreeStracture.put(newKey, list);
@@ -718,55 +587,22 @@ public abstract class Storage {
 		
 		for(FileMetadata f : list) {
 			
-			if(f.isDirectory()) {
-				boolean flag = pathFix(f.getRelativePath(), newKey + File.separator + f.getName(), storageTreeStracture);
-				
-				if(!flag)
-					return false;
-				
-				// newKey je relative path
-				f.setAbsolutePath(f.getParent().getAbsolutePath() + File.separator + f.getName());
-				f.setRelativePath(f.getParent().getRelativePath() + File.separator + f.getName());
-				
-			}
-			else {
-				// newKey je relative path
-				f.setAbsolutePath(newKey + File.separator + f.getName());
-				f.setRelativePath(newKey + File.separator + f.getName());
-			}
+			if(f.isDirectory()) 
+				pathFix(f.getRelativePath(), newKey + File.separator + f.getName(), storageTreeStracture);
+
+			// newKey je relative path
+			f.setAbsolutePath(newKey + File.separator + f.getName());
+			f.setRelativePath(newKey + File.separator + f.getName());
 		}
-		
-		return true;
 	}
-	// filePath destination
+	
 	protected void copyFileMetadata(String src, String dest) throws NotFound, DirectoryException, StorageSizeException {
 		
-		Path srcRelativePath = null;
-		Path newDestRelativePath = null;
 		Map<String, List<FileMetadata>> storageTreeStracture = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure();		
 		
-		String dataRootAbsolutePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getAbsolutePath();
-		String dataRootRelativePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath();
+		FileMetadata srcFile = getLastFileMetadataOnPath(getRelativePath(src), storageTreeStracture);
+		FileMetadata destDir = getLastFileMetadataOnPath(getRelativePath(dest), storageTreeStracture);				
 		
-		if(!src.startsWith(dataRootAbsolutePath) && !src.startsWith(dataRootRelativePath)) 
-			srcRelativePath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getRelativePath()).resolve(Paths.get(src));
-		
-		else {
-			src = src.substring( ((src.startsWith(dataRootAbsolutePath)==true) ? dataRootAbsolutePath.length() : dataRootRelativePath.length()) + File.separator.length());
-			srcRelativePath = Paths.get(StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath()).resolve(Paths.get(src));		
-		}
-	
-		if(!dest.startsWith(dataRootAbsolutePath) && !dest.startsWith(dataRootRelativePath)) 
-			newDestRelativePath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getRelativePath()).resolve(Paths.get(dest));
-		
-		else {
-			dest = dest.substring( ((dest.startsWith(dataRootAbsolutePath)==true) ? dataRootAbsolutePath.length() : dataRootRelativePath.length()) + File.separator.length());
-			newDestRelativePath = Paths.get(StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath()).resolve(Paths.get(dest));		
-		}
-		
-		FileMetadata srcFile = getLastFileMetadataOnPath(srcRelativePath, storageTreeStracture);
-		FileMetadata destDir = getLastFileMetadataOnPath(newDestRelativePath, storageTreeStracture);
-				
 		if(srcFile == null)
 			throw new NotFound("File path not correct!");
 		if(destDir == null)
@@ -789,18 +625,49 @@ public abstract class Storage {
 			
 			destDir.setNumOfFilesLimit(destDir.getNumOfFilesLimit() - 1);
 		}
-
-		// AKO JE U PITANJU DIRECTORIJUM TREBA DA SE HENDLUJU PUTANJE !!!!!!
 		
-//		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kopira
-//		for(FileMetadata f : storageTreeStracture.get(destDir.getRelativePath())) {
-//			if(f.getName().startsWith(srcFile.getName()) && f.getName().endsWith(srcFile.getName())) {
-//				srcFile.setName(srcFile.getName() + "*");
-//				break;
-//			}
-//		}
+		FileMetadata srcFileClone = srcFile.clone();		
 		
+		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kopira//FileMetadata f : storageTreeStracture.get(destDir.getRelativePath())
+		List<FileMetadata> list = storageTreeStracture.get(destDir.getRelativePath());
+		for(int i=0 ; i < list.size() ; i++) {
+			
+			FileMetadata f = list.get(i);
+			
+			if(f.getName().startsWith(srcFileClone.getName()) && f.getName().endsWith(srcFileClone.getName())) {
+				srcFileClone.setName(srcFileClone.getName() + "*");								
+				i = 0;
+			}
+		}
+		
+		srcFileClone.setParent(destDir);
+		srcFileClone.setAbsolutePath(destDir.getAbsolutePath() + File.separator + srcFileClone.getName());
+		srcFileClone.setRelativePath(destDir.getRelativePath() + File.separator + srcFileClone.getName());
 		storageTreeStracture.get(destDir.getRelativePath()).add(srcFile);
+		
+		if(srcFileClone.isDirectory()) 
+			pathClone(srcFile.getRelativePath(), destDir.getRelativePath() + File.separator + srcFileClone.getName(), srcFileClone, storageTreeStracture);
+				
+		
+	}
+	
+	private void pathClone(String fromKey, String toKey, FileMetadata parent, Map<String, List<FileMetadata>> storageTreeStracture) {
+		
+		storageTreeStracture.put(toKey, new ArrayList<>());
+		
+		for(FileMetadata f : storageTreeStracture.get(fromKey)) {
+			
+			FileMetadata clone = f.clone();
+			
+			clone.setParent(parent);
+			clone.setAbsolutePath(parent.getAbsolutePath() + File.separator + clone.getName());
+			clone.setRelativePath(parent.getRelativePath() + File.separator + clone.getName());
+			
+			storageTreeStracture.get(toKey).add(clone);
+			
+			if(clone.isDirectory())
+				pathClone(f.getRelativePath(), toKey + File.separator + clone.getName(), clone, storageTreeStracture);						
+		}		
 	}
 	
 	protected void writeToFileMetadata(String filePath, String text, boolean append) {
@@ -866,5 +733,37 @@ public abstract class Storage {
 		}	
 		
 		return true;
+	}
+	
+	private Path getRelativePath(String path) {
+		
+		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
+		String dataRootAbsolutePath = storageInformation.getDatarootDirectory().getAbsolutePath();
+		String dataRootRelativePath = storageInformation.getDatarootDirectory().getRelativePath();
+		Path relativePath = null;
+
+		// racunamo relativnu putanju u odnosu na trenutni direktorijum	
+		if(!path.startsWith(dataRootAbsolutePath) && !path.startsWith(dataRootRelativePath)) 
+			relativePath = Paths.get(storageInformation.getCurrentDirectory().getRelativePath()).resolve(Paths.get(path));
+		
+		else if(path.startsWith(dataRootAbsolutePath)){
+			path = path.substring(dataRootAbsolutePath.length() + File.separator.length());
+			relativePath = Paths.get(storageInformation.getDatarootDirectory().getRelativePath()).resolve(Paths.get(path));
+		
+			 /* npr. ako je:
+							       path = C:\Users\Luka\Desktop\storage\dataRootDirectory\dir1\dir2
+				   dataRootAbsolutePath = C:\Users\Luka\Desktop\storage\dataRootDirectory
+				   		   novi path je = dir1\dir2
+			            relativePath je = storage\dataRootDirectory\dir1\dir2
+			 */			
+		}
+		else if(path.startsWith(dataRootRelativePath)) 
+			relativePath = Paths.get(path);
+			/* npr. ako je :
+								path = storage\dataRootDirectory\dir1\dir2
+					 relativePath je = storage\dataRootDirectory\dir1\dir2
+			*/
+		
+		return relativePath;
 	}
 }
