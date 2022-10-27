@@ -16,6 +16,8 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.script.ScriptEngineFactory;
+
 import configuration.StorageConfiguration;
 import exception.DirectoryException;
 import exception.InvalidArgumentsExcpetion;
@@ -86,9 +88,9 @@ public abstract class Storage {
 	
 	public abstract boolean download(String filePath, String downloadDest) throws NotFound, StorageConnectionException, PathException; // download
 	
-	public abstract void copyFile(String filePath, String dest) throws NotFound, StorageConnectionException; // copy
+	public abstract boolean copyFile(String filePath, String dest) throws NotFound, StorageConnectionException; // copy
 	
-	public abstract void writeToFile(String filePath, String text, boolean append) throws NotFound, StorageSizeException, StorageConnectionException; //write
+	public abstract boolean writeToFile(String filePath, String text, boolean append) throws NotFound, StorageSizeException, StorageConnectionException; //write
 	
 	protected abstract boolean checkStorageExistence(String path) throws PathException;
 	
@@ -96,17 +98,17 @@ public abstract class Storage {
 	
 	protected abstract void readFromJSON(Object obj, String path);
 	
-	public void changeDirectory(String dest) throws NotFound, StorageConnectionException { // cd
+	public boolean changeDirectory(String dest) throws NotFound, StorageConnectionException { // cd
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 					
 		if(dest.equals("cd..")) {
 			if(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().isStorage())
-				return;
+				return true;
 
 			StorageManager.getInstance().getStorageInformation().setCurrentDirectory(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getParent());
-			return;
+			return true;
 		}
 								
 		FileMetadata directory = getLastFileMetadataOnPath(getRelativePath(dest), StorageManager.getInstance().getStorageInformation().getStorageTreeStructure());
@@ -114,8 +116,10 @@ public abstract class Storage {
 		if(directory == null)
 			throw new NotFound("Location does not exist!");
 		
-		StorageManager.getInstance().getStorageInformation().setCurrentDirectory(directory);		
+		StorageManager.getInstance().getStorageInformation().setCurrentDirectory(directory);
+		return true;
 	}
+	
 	
 	public boolean find(String src) throws StorageConnectionException { // hit
 		
@@ -124,6 +128,7 @@ public abstract class Storage {
 
 		return checkPath(getRelativePath(src), StorageManager.getInstance().getStorageInformation().getStorageTreeStructure());
 	}
+	
 	
 	public Map<String, Boolean> find(List<String> filePaths) throws StorageConnectionException { // hit -l
 		
@@ -136,6 +141,7 @@ public abstract class Storage {
 		
 		return result;
 	}
+	
 	
 	public List<String> findDestinantions(String name) throws StorageConnectionException { // dest
 		
@@ -432,6 +438,7 @@ public abstract class Storage {
 			throws NotFound, NamingPolicyException, StorageSizeException, DirectoryException, UnsupportedFileException, OperationNotAllowed {
 		
 		String name = Paths.get(dest).getFileName().toString();
+		dest = Paths.get(dest).getParent().toString(); // parent path
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<String, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();
 		FileMetadata storage = StorageManager.getInstance().getStorageInformation().getStorageDirectory();
@@ -447,7 +454,7 @@ public abstract class Storage {
 					throw new UnsupportedFileException("Unsupported file!");
 			}
 		}
-		
+
 		FileMetadata parent = getLastFileMetadataOnPath(getRelativePath(dest), storageTreeStracture);
 		
 		// implementiraj da se naprave svi direktorijumi na putanji ako ne postoje
@@ -525,17 +532,28 @@ public abstract class Storage {
 			destFile.setNumOfFilesLimit(destFile.getNumOfFilesLimit() - 1);
 		}
 		
-		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se premesta --- POPRAVI, MOZE DA POREMETI PUTANJE
-		for(FileMetadata f : storageTreeStracture.get(destFile.getRelativePath())) {
+		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se premesta
+		List<FileMetadata> list = storageTreeStracture.get(destFile.getRelativePath());
+		for(int i = 0 ; i < list.size() ; i++) {
+			
+			FileMetadata f = list.get(i);
+			
 			if(f.getName().startsWith(srcFile.getName()) && f.getName().endsWith(srcFile.getName())) {
 				srcFile.setName(srcFile.getName() + "*");
-				break;
+				i = 0;
 			}
 		}
 		
-		srcFile.setParent(destFile);
+		if(srcFile.isDirectory()) 
+			pathFix(srcFile.getRelativePath(), destFile.getRelativePath() + File.separator + srcFile.getName(), storageTreeStracture);
+				
 		storageTreeStracture.get(srcFile.getParent().getRelativePath()).remove(srcFile);
-		storageTreeStracture.get(destFile.getRelativePath()).add(srcFile);		
+		storageTreeStracture.get(destFile.getRelativePath()).add(srcFile);
+		srcFile.setParent(destFile);
+		srcFile.setAbsolutePath(destFile.getAbsolutePath() + File.separator + srcFile.getName());
+		srcFile.setRelativePath(destFile.getRelativePath() + File.separator + srcFile.getName());		
+		srcFile.setTimeModified(new Date());
+
 		return true;
 	}
 	
@@ -548,12 +566,6 @@ public abstract class Storage {
 		
 		if(file == null)
 			throw new NotFound("File path not correct!");
-		
-		String oldKey = "";
-		
-		if(file.isDirectory()) 
-			oldKey = file.getRelativePath();				
-		
 
 		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se premesta
 		List<FileMetadata> list = storageTreeStracture.get(file.getParent().getRelativePath());
@@ -567,15 +579,15 @@ public abstract class Storage {
 			}
 		}
 		
-		
-		if(file.isDirectory()) 						
-			pathFix(oldKey, file.getParent().getRelativePath() + File.separator + newName, storageTreeStracture);	
+		if(file.isDirectory()) 
+			pathFix(file.getRelativePath(), file.getParent().getRelativePath() + File.separator + newName, storageTreeStracture);	
 		
 		file.setName(newName);
 		file.setTimeModified(new Date());
 		file.setAbsolutePath(file.getParent().getAbsolutePath() + File.separator + newName);
 		file.setRelativePath(file.getParent().getRelativePath() + File.separator + newName);
-		
+		file.setTimeModified(new Date());
+
 		return newName;
 	}
 	
@@ -584,13 +596,13 @@ public abstract class Storage {
 		List<FileMetadata> list = storageTreeStracture.get(oldKey);
 		storageTreeStracture.put(newKey, list);
 		storageTreeStracture.remove(oldKey);
-		
+
 		for(FileMetadata f : list) {
-			
+
 			if(f.isDirectory()) 
 				pathFix(f.getRelativePath(), newKey + File.separator + f.getName(), storageTreeStracture);
 
-			// newKey je relative path
+			// newKey je relativna path
 			f.setAbsolutePath(newKey + File.separator + f.getName());
 			f.setRelativePath(newKey + File.separator + f.getName());
 		}
@@ -628,7 +640,7 @@ public abstract class Storage {
 		
 		FileMetadata srcFileClone = srcFile.clone();		
 		
-		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kopira//FileMetadata f : storageTreeStracture.get(destDir.getRelativePath())
+		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kopira
 		List<FileMetadata> list = storageTreeStracture.get(destDir.getRelativePath());
 		for(int i=0 ; i < list.size() ; i++) {
 			
@@ -643,11 +655,10 @@ public abstract class Storage {
 		srcFileClone.setParent(destDir);
 		srcFileClone.setAbsolutePath(destDir.getAbsolutePath() + File.separator + srcFileClone.getName());
 		srcFileClone.setRelativePath(destDir.getRelativePath() + File.separator + srcFileClone.getName());
-		storageTreeStracture.get(destDir.getRelativePath()).add(srcFile);
+		storageTreeStracture.get(destDir.getRelativePath()).add(srcFileClone);
 		
 		if(srcFileClone.isDirectory()) 
 			pathClone(srcFile.getRelativePath(), destDir.getRelativePath() + File.separator + srcFileClone.getName(), srcFileClone, storageTreeStracture);
-				
 		
 	}
 	
@@ -670,10 +681,10 @@ public abstract class Storage {
 		}		
 	}
 	
-	protected void writeToFileMetadata(String filePath, String text, boolean append) {
+	protected boolean writeToFileMetadata(String filePath, String text, boolean append) {
 
 		
-		
+		return true;
 	}
 
 	
@@ -685,24 +696,36 @@ public abstract class Storage {
 		if(!iterator.hasNext())
 			return null;
 		String parent = iterator.next().toString();		
-				
+		
 		while(iterator.hasNext()) {
-	
+									
 			String nextDirName = iterator.next().toString();
 			List<FileMetadata> list = storageTreeStracture.get(parent);
-		
+			if(list==null) {
+				System.out.println("parent:"+parent);
+				System.out.println("path:"+path.toString());
+			}
 			for(int i=0 ; i<list.size() ; i++) {				
-				FileMetadata f = list.get(i);							
+				FileMetadata f = list.get(i);					
 				if(f.getName().equals(nextDirName)){
 					parent += (File.separator + nextDirName);
 					ans = f;
 					break;
 				}
 				
-				if(i == list.size() - 1)
+				if(i == list.size() - 1) {
+					System.out.println("parent:"+parent);
+					System.out.println("nextDirName not found:"+nextDirName);
 					return null;
+				}
 			}			
 		}	
+		
+		if(ans == null)
+		{
+			System.out.println("parent:"+parent);
+			System.out.println("nextDirName not found: nije usao u while");			
+		}
 		
 		return ans;
 	}
