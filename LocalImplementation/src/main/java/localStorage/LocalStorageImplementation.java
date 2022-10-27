@@ -135,30 +135,29 @@ public class LocalStorageImplementation extends Storage {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
-		
+								
 		try {
-		
+
 			FileMetadata fileMetadata = new FileMetadata();
 			fileMetadata.setDirectory(true);
 			fileMetadata.setNumOfFilesLimit( filesLimit.length>0 ? filesLimit[0] : null );
-			addFileMetadataToStorage(dest, fileMetadata);
-		
+			addFileMetadataToStorage(dest, fileMetadata, filesLimit);
+
 		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
 			e.printStackTrace();
+			return false;
 		}
 		
-		if(!dest.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+		String dataRootAbsolutePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getAbsolutePath();
+		String dataRootRelativePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath();
+		
+		if(!dest.startsWith(dataRootAbsolutePath) && !dest.startsWith(dataRootRelativePath))
 			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest;
 		
-		if(filesLimit.length>0) {
-			Map<String, Integer> map = StorageManager.getInstance().getStorageInformation().getDirNumberOfFilesLimit();
-			map.put(dest, filesLimit[0]);
-		}
+		else if(dest.startsWith(dataRootRelativePath)) 
+			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest.substring(dataRootRelativePath.length() + File.separator.length());
 		
-		Path path = Paths.get(dest);
-		new File(path.toString()).mkdir();
-		
-		return true;
+		return new File(dest).mkdir();
 	}
 
 	@Override
@@ -167,9 +166,6 @@ public class LocalStorageImplementation extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
-		if(!dest.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
-			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest;
-		
 		try {
 			
 			FileMetadata fileMetadata = new FileMetadata();
@@ -177,61 +173,90 @@ public class LocalStorageImplementation extends Storage {
 			addFileMetadataToStorage(dest, fileMetadata);
 		
 		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
-			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
 		
-		try {
-			
-			Path path = Paths.get(dest);
-			new File(path.toString()).createNewFile();
+		String dataRootAbsolutePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getAbsolutePath();
+		String dataRootRelativePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath();
+		
+		if(!dest.startsWith(dataRootAbsolutePath) && !dest.startsWith(dataRootRelativePath))
+			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest;
+		
+		else if(dest.startsWith(dataRootRelativePath)) 
+			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest.substring(dataRootRelativePath.length() + File.separator.length());
+				
+		try {			
+			return new File(dest).createNewFile();
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
+		return false;
+	}
+
+	@Override
+	public boolean move(String src, String newDest) throws StorageConnectionException {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
+		
+		try {			
+			moveFileMetadata(src, newDest);			
+			
+		} catch (DirectoryException | NotFound e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		String dataRootAbsolutePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getAbsolutePath();
+		String dataRootRelativePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath();
+		
+		if(!src.startsWith(dataRootAbsolutePath) && !src.startsWith(dataRootRelativePath))
+			src = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + src;		
+		else if(src.startsWith(dataRootRelativePath)) 
+			src = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + src.substring(dataRootRelativePath.length() + File.separator.length());
+				
+		if(!newDest.startsWith(dataRootAbsolutePath) && !newDest.startsWith(dataRootRelativePath))
+			newDest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + newDest;		
+		else if(newDest.startsWith(dataRootRelativePath)) 
+			newDest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + newDest.substring(dataRootRelativePath.length() + File.separator.length());
+		
+		try {
+			FileUtils.moveToDirectory(new File(src), new File(newDest), false);
+		} catch (IOException e) {			
+			e.printStackTrace();
+			return false;
+		}	
+		
 		return true;
 	}
 
 	@Override
-	public void move(String filePath, String newDest) throws StorageConnectionException {
+	public boolean remove(String path) throws StorageConnectionException{
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
-		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
-			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
-		
-		if(!newDest.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
-			newDest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + newDest;
-		
 		try {			
-			moveFileMetadata(filePath, newDest);
-			FileUtils.moveToDirectory(new File(filePath), new File(newDest), false);	
-			
-		} catch (DirectoryException | NotFound | IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public void remove(String filePath) throws StorageConnectionException{
-		
-		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
-			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
-		
-		
-		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
-			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
-		
-		try {			
-			removeFileMetadataFromStorage(filePath);
-			remove(new File(filePath));
+			removeFileMetadataFromStorage(path);			
 			
 		} catch (NotFound e) {
 			e.printStackTrace();
+			return false;
 		}
 		
+		String dataRootAbsolutePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getAbsolutePath();
+		String dataRootRelativePath = StorageManager.getInstance().getStorageInformation().getDatarootDirectory().getRelativePath();
 		
+		if(!path.startsWith(dataRootAbsolutePath) && !path.startsWith(dataRootRelativePath))
+			path = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + path;
+		
+		else if(path.startsWith(dataRootRelativePath)) 
+			path = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + path.substring(dataRootRelativePath.length() + File.separator.length());		
+						
+		remove(new File(path));
+		return true;
 	}
 	
 	private void remove(File file) throws StorageConnectionException {
@@ -257,7 +282,7 @@ public class LocalStorageImplementation extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
-		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getDataRootPathPrefix()))
 			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
 		
 		try {
@@ -284,7 +309,7 @@ public class LocalStorageImplementation extends Storage {
 		Path srcPath = Paths.get(filePath);
 		Path destPath = Paths.get(dest);
 		
-		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getDataRootPathPrefix()))
 			srcPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath()).resolve(srcPath);
 		
 		if(!dest.startsWith(FileUtils.getUserDirectoryPath()))
@@ -318,10 +343,10 @@ public class LocalStorageImplementation extends Storage {
 		Path srcPath = Paths.get(filePath);
 		Path destPath = Paths.get(dest);
 
-		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getDataRootPathPrefix()))
 			srcPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath()).resolve(srcPath);
 		
-		if(!dest.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+		if(!dest.startsWith(StorageManager.getInstance().getStorageInformation().getDataRootPathPrefix()))
 			destPath = Paths.get(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath()).resolve(destPath);
 		
 		try {
@@ -339,7 +364,7 @@ public class LocalStorageImplementation extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 
-		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getStoragePathPrefix()))
+		if(!filePath.startsWith(StorageManager.getInstance().getStorageInformation().getDataRootPathPrefix()))
 			filePath = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + filePath;
 		
 		File file = new File(filePath);
