@@ -204,7 +204,7 @@ public class LocalStorageImplementation extends Storage {
 		try {			
 			moveFileMetadata(src, newDest);			
 			
-		} catch (DirectoryException | NotFound e) {
+		} catch (DirectoryException | NotFound | OperationNotAllowed e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -352,7 +352,7 @@ public class LocalStorageImplementation extends Storage {
 		try {			
 			copyFileMetadata(src, dest);
 		
-		} catch (StorageSizeException | NotFound | DirectoryException e) {
+		} catch (StorageSizeException | NotFound | DirectoryException | OperationNotAllowed e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -369,7 +369,7 @@ public class LocalStorageImplementation extends Storage {
 			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest;		
 		else if(dest.startsWith(dataRootRelativePath)) 
 			dest = StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getAbsolutePath() + File.separator + dest.substring(dataRootRelativePath.length() + File.separator.length());
-				
+		
 		Path srcPath = Paths.get(src);
 		Path destPath = Paths.get(dest);
 		

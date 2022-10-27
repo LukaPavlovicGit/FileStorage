@@ -168,13 +168,13 @@ public class CommandLine {
 	            	else if(commArray.length == 3 && commArray[0].equals("move")) {
 	            		String filePath = commArray[1];
 	            		String newDest = commArray[2];
-	            		if(storage.move(filePath, newDest))
-	            			System.out.println("File has been moved!");
+	            		if(!storage.move(filePath, newDest))
+	            			System.out.println("Something went wrong!");
 	            	}
 	            	else if(commArray.length == 2 && commArray[0].equals("del")) {
 	            		String filePath = commArray[1];
-	            		if(storage.remove(filePath))
-	            			System.out.println("File has been deleted!");
+	            		if(!storage.remove(filePath))
+	            			System.out.println("Something went wrong!");
 	            	}
 	            	else if(commArray.length == 3 && commArray[0].equals("rename")) {
 	            		String filePath = commArray[1];

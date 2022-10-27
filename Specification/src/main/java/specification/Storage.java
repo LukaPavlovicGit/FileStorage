@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -182,11 +183,11 @@ public abstract class Storage {
 		// fix parameters
 		if(onlyDirs)
 			onlyFiles = false;
-		if(prefix.length()>0) {
+		if(prefix !=null && prefix.length()>0) {
 			sufix = null;
 			subWord = null;
 		}
-		if(sufix.length()>0)
+		if(sufix != null && sufix.length()>0)
 			subWord = null;
 		
 		Map<String, List<FileMetadata>> result = new HashMap<>();
@@ -510,7 +511,7 @@ public abstract class Storage {
 		return true;
 	}
 	
-	protected boolean moveFileMetadata(String src, String newDest) throws NotFound, DirectoryException {
+	protected boolean moveFileMetadata(String src, String newDest) throws NotFound, DirectoryException, OperationNotAllowed {
 		
 	
 		Map<String, List<FileMetadata>> storageTreeStracture = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure();		
@@ -524,6 +525,9 @@ public abstract class Storage {
 			throw new NotFound("Destination path not correct!");
 		if(!destFile.isDirectory())
 			throw new DirectoryException("Destination path does not represent the directory!");
+		if(destFile.getRelativePath().startsWith(srcFile.getRelativePath())) 
+			throw new OperationNotAllowed("The destination folder is a subfolder of the source folder!");
+		
 		
 		if(destFile.getNumOfFilesLimit() != null) {
 			if(destFile.getNumOfFilesLimit() < 1)
@@ -608,7 +612,7 @@ public abstract class Storage {
 		}
 	}
 	
-	protected void copyFileMetadata(String src, String dest) throws NotFound, DirectoryException, StorageSizeException {
+	protected void copyFileMetadata(String src, String dest) throws NotFound, DirectoryException, StorageSizeException, OperationNotAllowed {
 		
 		Map<String, List<FileMetadata>> storageTreeStracture = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure();		
 		
@@ -620,8 +624,9 @@ public abstract class Storage {
 		if(destDir == null)
 			throw new NotFound("Destination path not correct!");
 		if(!destDir.isDirectory())
-			throw new DirectoryException("Destination path does not represent the directory!");
-				
+			throw new DirectoryException("Destination path does not represent the directory!");		
+		if(destDir.getRelativePath().startsWith(srcFile.getRelativePath())) 
+			throw new OperationNotAllowed("The destination folder is a subfolder of the source folder!");
 		
 		Long storageSize = StorageManager.getInstance().getStorageInformation().getStorageSize();
 		if(storageSize != null) {
@@ -652,31 +657,47 @@ public abstract class Storage {
 			}
 		}
 		
-		if(srcFileClone.isDirectory()) 
-			pathClone(srcFile.getRelativePath(), destDir.getRelativePath() + File.separator + srcFileClone.getName(), srcFileClone, storageTreeStracture);
-		
 		srcFileClone.setParent(destDir);
 		srcFileClone.setAbsolutePath(destDir.getAbsolutePath() + File.separator + srcFileClone.getName());
 		srcFileClone.setRelativePath(destDir.getRelativePath() + File.separator + srcFileClone.getName());
-		storageTreeStracture.get(destDir.getRelativePath()).add(srcFileClone);						
+		storageTreeStracture.get(destDir.getRelativePath()).add(srcFileClone);		
+		
+		if(srcFileClone.isDirectory()) 
+			pathClone(srcFile.getRelativePath(), srcFileClone.getRelativePath(), srcFileClone, storageTreeStracture);								
 	}
 	
 	private void pathClone(String fromKey, String toKey, FileMetadata parent, Map<String, List<FileMetadata>> storageTreeStracture) {
-		
-		storageTreeStracture.put(toKey, new ArrayList<>());
-		
-		for(FileMetadata f : storageTreeStracture.get(fromKey)) {
+				
+		Queue<String> fromKeys = new LinkedList<>();
+		Queue<String> toKeys = new LinkedList<>();
+		Queue<FileMetadata> parents = new LinkedList<>();				
+				
+		for(;;) {	
 			
-			FileMetadata clone = f.clone();
+			storageTreeStracture.put(toKey, new ArrayList<>());
 			
-			if(clone.isDirectory())
-				pathClone(f.getRelativePath(), toKey + File.separator + clone.getName(), clone, storageTreeStracture);	
-									
-			clone.setParent(parent);
-			clone.setAbsolutePath(parent.getAbsolutePath() + File.separator + clone.getName());
-			clone.setRelativePath(parent.getRelativePath() + File.separator + clone.getName());			
+			for(FileMetadata f : storageTreeStracture.get(fromKey)) {
+				
+				FileMetadata clone = f.clone();
+				clone.setParent(parent);
+				clone.setAbsolutePath(parent.getAbsolutePath() + File.separator + clone.getName());
+				clone.setRelativePath(parent.getRelativePath() + File.separator + clone.getName());		
+				storageTreeStracture.get(toKey).add(clone);		
+				
+				if(f.isDirectory()) {
+					fromKeys.add(f.getRelativePath());
+					toKeys.add(clone.getRelativePath());
+					parents.add(clone);
+				}
+					
+			}
 			
-			storageTreeStracture.get(toKey).add(clone);											
+			if(fromKeys.isEmpty())
+				return;
+			
+			fromKey = fromKeys.poll();
+			toKey = toKeys.poll();
+			parent = parents.poll();
 		}		
 	}
 	
