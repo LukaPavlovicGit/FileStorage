@@ -809,4 +809,18 @@ public abstract class Storage {
 		
 		return relativePath;
 	}
+	
+	protected Path getAbsolutePath(String path) {
+		
+		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
+		String dataRootAbsolutePath = storageInformation.getDatarootDirectory().getAbsolutePath();
+		String dataRootRelativePath = storageInformation.getDatarootDirectory().getRelativePath();
+			
+		if(!path.startsWith(dataRootAbsolutePath) && !path.startsWith(dataRootRelativePath))
+			path = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + path;		
+		else if(path.startsWith(dataRootRelativePath)) 
+			path = storageInformation.getDatarootDirectory().getAbsolutePath() + File.separator + path.substring(dataRootRelativePath.length() + File.separator.length());
+		
+		return Paths.get(path);
+	}
 }
