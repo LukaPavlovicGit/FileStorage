@@ -190,13 +190,15 @@ public class CommandLine {
 	            	else if(commArray.length == 3 && commArray[0].equals("copy")) {
 	            		String filePath = commArray[1];
 	            		String dest = commArray[2];
-	            		storage.copyFile(filePath, dest);
+	            		if(!storage.copyFile(filePath, dest))
+	            			System.out.println("Something went wrong!");
 	            	}
 	            	else if((commArray.length == 4 || commArray.length == 3 )&& commArray[0].equals("write")) {
 	            		String filePath = commArray[1];
 	            		String text = commArray[2];
 	            		boolean append = (commArray.length==4 && commArray[3].equals("y")) ? true : false;
-	            		storage.writeToFile(filePath,text,append);
+	            		if(!storage.writeToFile(filePath,text,append))
+	            			System.out.println("Something went wrong!");
 	            	}
 	            	else if(commArray.length == 2 && commArray[0].equals("cd")) {	          
 	            		String dest = commArray[1];
@@ -341,8 +343,7 @@ public class CommandLine {
 	            	}
 	   	            	
 	            }catch (Exception e) {
-	            	System.out.println(e.getMessage());
-	            	continue;
+	            	System.out.println(e.getMessage());	            		            
 	            }
 	            	        		        	
 	            if (command.equals("exit")) {
@@ -464,6 +465,7 @@ public class CommandLine {
 	                continue;
 	            }	        	        	
 	            
+	            System.out.print(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getRelativePath() + ">");
 	        }
 	}
 
