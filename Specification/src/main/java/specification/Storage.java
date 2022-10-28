@@ -191,7 +191,7 @@ public abstract class Storage {
 			subWord = null;
 		
 		Map<String, List<FileMetadata>> result = new HashMap<>();
-		Queue<String> pq = new PriorityQueue<>();
+		Queue<String> pq = new LinkedList<>();
 		pq.add(directory.getRelativePath());
 		
 		// BFS
@@ -323,6 +323,9 @@ public abstract class Storage {
 		// atributes[5] = "isFile"
 		// atributes[6] = "isDirectory"
 		
+		
+		Map<String, List<FileMetadata>> resultClone = new HashMap<>();
+		
 		for(String relativePath : result.keySet()) {
 			
 			List<FileMetadata> filtered = new ArrayList<>();
@@ -347,24 +350,25 @@ public abstract class Storage {
 				if(atributes[1])
 					builder.withName(f.getName());
 				if(atributes[2])
-					builder.withAbsolutePath(f.getAbsolutePath());
+					builder.withRelativePath(f.getRelativePath());
 				if(atributes[3])
-					builder.withTimeCreated(f.getTimeCreated());
+					builder.withAbsolutePath(f.getAbsolutePath());
 				if(atributes[4])
-					builder.withTimeModified(f.getTimeModified());
+					builder.withTimeCreated(f.getTimeCreated());
 				if(atributes[5])
-					builder.withIsFile(f.isFile());
+					builder.withTimeModified(f.getTimeModified());
 				if(atributes[6])
-					builder.withIsDirectory(f.isDirectory());
-				
+					builder.withIsFile(f.isFile());
+				if(atributes[7])
+					builder.withIsDirectory(f.isDirectory());								
 				
 				filtered.add(builder.build());
 			}
 			
-			result.put(relativePath, filtered);
+			resultClone.put(relativePath, filtered);
 		}
 		
-		return result;
+		return resultClone;
 	}
 	
 	public void setStorageConfiguration(Long size, Set<String> unsupportedFiles) {

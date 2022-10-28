@@ -685,7 +685,7 @@ public class GoogleDriveStorage extends Storage {
 			
 			// ako ne postoji u JSON fajlu upisujemo ga sada
 			StorageManager.getInstance().getStorageInformation().setCurrentDirectory(StorageManager.getInstance().getStorageInformation().getDatarootDirectory());
-			jsonString = gson.toJson((StorageInformation) obj);
+			jsonString = gson.toJson(StorageManager.getInstance().getStorageInformation());
 				
 			if(jsonString == null)
 				return;

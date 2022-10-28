@@ -93,8 +93,9 @@ public class StorageInformation {
 	public FileMetadata getStorageInformationJSONfile() {
 		return storageInformationJSONfile;
 	}
-	public String getStoragePathPrefix() {
-		return storageDirectory.getName() + File.separator + datarootDirectory.getName();
+	// <storage_name>\<dataRootDirectory>
+	public String getDataRootPathPrefix() {
+		return datarootDirectory.getRelativePath();
 	}
 	public FileMetadata getStorageDirectory() {
 		return storageDirectory;

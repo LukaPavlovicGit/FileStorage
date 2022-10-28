@@ -1,5 +1,6 @@
 package commandLine;
 
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -112,8 +113,8 @@ public class CommandLine {
 	            			try {
 	            				filesLimit = Integer.valueOf(commArray[1]);
 	            			} catch (NumberFormatException e) {
-								System.out.println(e.getMessage());
-								continue;
+	            				System.out.println(String.format("Because of NumberFormatException, the folder '%s' has been assigned default file limit value! ", Paths.get(dest).getFileName()));
+	            				filesLimit = 20;
 							}
 	            			if(storage.connectToStorage(commArray[1]))
 		            			System.out.println("Connected to storage successfully!");
@@ -236,7 +237,7 @@ public class CommandLine {
 	            			resultSet = storage.listDirectory(src, false, false, false, null, null, null, null);	            			
 	            		}
 	            		else {
-		            		boolean onlyDirs=false, onleFiles=false, searchSubDirecories=false;
+		            		boolean onlyDirs=false, onlyFiles=false, searchSubDirecories=false;
 		            		String ext=null, pref=null, suf=null, sub=null;
 	
 		            		String[] subArr = Arrays.copyOfRange(commArray, 2, commArray.length);
@@ -244,7 +245,7 @@ public class CommandLine {
 		            		for(int i=0 ; i<subArr.length ; i++) {
 		            			
 		            			if(subArr[i].contains("-d")) onlyDirs = true;
-		            			else if(subArr[i].contains("-f")) onleFiles = true;
+		            			else if(subArr[i].contains("-f")) onlyFiles = true;
 		            			else if(subArr[i].contains("-ssd")) searchSubDirecories = true;
 		            			else if(subArr[i].contains("-ex:")) ext = subArr[i].split("-ex:")[1];
 		            			else if(subArr[i].contains("-p:")) pref = subArr[i].split("-p:")[1];
@@ -253,14 +254,12 @@ public class CommandLine {
 		            			
 		            		}		
 		            		
-		            		resultSet = storage.listDirectory(src, onlyDirs, onleFiles, searchSubDirecories, ext, pref, suf, sub);
+		            		resultSet = storage.listDirectory(src, onlyDirs, onlyFiles, searchSubDirecories, ext, pref, suf, sub);
 	            		}	            		
 	            		for(String relativePath : resultSet.keySet()) {
-	            			System.out.println(relativePath + " :");
+	            			System.out.println("->" + relativePath + ":");
 	            			for(FileMetadata ff : resultSet.get(relativePath))
-	            				System.out.println("\t" + ff.getAbsolutePath());
-	            			
-	            			System.out.println();
+	            				System.out.println(" " + ff.getName());
 	            		}	           
 	            	}
 	            	else if(commArray.length > 2 && commArray[0].equals("rez") && commArray[1].equals("-sort")) {	          
@@ -269,7 +268,7 @@ public class CommandLine {
 	            		}
 	            		else {
 	            			
-	            			boolean byName=false, byCreation=false, byModification=false, asc=false, desc=false;	            			
+	            			boolean byName=false, byCreation=false, byModification=false, asc=true, desc=false;	            			
 	            			String[] subArr = Arrays.copyOfRange(commArray, 3, commArray.length);
 	            			
 	            			for(int i=0 ; i<subArr.length ; i++) {
@@ -284,16 +283,14 @@ public class CommandLine {
 	            		}
 	            		
 	            		for(String relativePath : resultSet.keySet()) {
-	            			System.out.println(relativePath + " :");
+	            			System.out.println("->" + relativePath + " :");
 	            			for(FileMetadata ff : resultSet.get(relativePath))
-	            				System.out.println("\t" + ff.getAbsolutePath());
-	            			
-	            			System.out.println();
+	            				System.out.println(" " + ff.getName());
 	            		}	   
 	            	}
 	            	else if(commArray.length > 2 && commArray[0].equals("rez") && commArray[1].equals("-fil")) {	          
 	            		String[] subArr = Arrays.copyOfRange(commArray, 2, commArray.length);
-	            		boolean[] attributes = new boolean[7];
+	            		boolean[] attributes = new boolean[10];
 	            		Arrays.fill(attributes, Boolean.FALSE);
 	            		Date[][] periods = new Date[2][2];
 	            		SimpleDateFormat formatter = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
@@ -305,7 +302,7 @@ public class CommandLine {
 	            				
 	            				String start = subStr.substring(5, subStr.indexOf("|"));	            	            				
 	            				String end = subStr.substring(subStr.indexOf("|") + 1, 
-	            						Math.min((subStr.indexOf("-") == -1) ? Integer.MAX_VALUE : subStr.indexOf("-"), subStr.length()) );
+	            				Math.min((subStr.indexOf("-") == -1) ? Integer.MAX_VALUE : subStr.indexOf("-"), subStr.length()) );
 	            				
 	            				periods[0][0] = formatter.parse(start);
 	            				periods[0][1] = formatter.parse(end);	            				
@@ -316,7 +313,7 @@ public class CommandLine {
 	            				
 	            				String start = subStr.substring(5, subStr.indexOf("|"));	            	            				
 	            				String end = subStr.substring(subStr.indexOf("|") + 1, 
-	            						Math.min((subStr.indexOf("-") == -1) ? Integer.MAX_VALUE : subStr.indexOf("-"), subStr.length()) );
+        						Math.min((subStr.indexOf("-") == -1) ? Integer.MAX_VALUE : subStr.indexOf("-"), subStr.length()) );
 	            				
 	            				periods[1][0] = formatter.parse(start);
 	            				periods[1][1] = formatter.parse(end);	            				
@@ -324,26 +321,27 @@ public class CommandLine {
 	            			}
 	            			else if(subArr[i].contains("-id")) attributes[0] = true;
 	            			else if(subArr[i].contains("-n")) attributes[1] = true;
-	            			else if(subArr[i].contains("-path")) attributes[2] = true;
-	            			else if(subArr[i].contains("-tc")) attributes[3] = true;
-	            			else if(subArr[i].contains("-tm")) attributes[4] = true;
-	            			else if(subArr[i].contains("-f")) attributes[5] = true;
-	            			else if(subArr[i].contains("-d")) attributes[6] = true;
+	            			else if(subArr[i].contains("-rp")) attributes[2] = true;
+	            			else if(subArr[i].contains("-ap")) attributes[3] = true;
+	            			else if(subArr[i].contains("-tc")) attributes[4] = true;
+	            			else if(subArr[i].contains("-tm")) attributes[5] = true;
+	            			else if(subArr[i].contains("-f")) attributes[6] = true;
+	            			else if(subArr[i].contains("-d")) attributes[7] = true;
 	            			
-	            		}	            		
+	            		}            		
 	            		
-	            		resultSet = storage.resultFilter(resultSet, attributes, periods);
-	            		for(String relativePath : resultSet.keySet()) {
-	            			System.out.println(relativePath + ":");
-	            			for(FileMetadata ff : resultSet.get(relativePath))
-	            				System.out.println("\t" + ff.getAbsolutePath());
+	            		Map<String, List<FileMetadata>> resultClone = storage.resultFilter(resultSet, attributes, periods);
+	            		
+	            		for(String relativePath : resultClone.keySet()) {
+	            			System.out.println("->" + relativePath + " :");
 	            			
-	            			System.out.println();
+	            			for(FileMetadata ff : resultClone.get(relativePath))
+	            				System.out.println(ff);
 	            		}
 	            	}
 	   	            	
 	            }catch (Exception e) {
-	            	System.out.println(e.getMessage());	            		            
+	            	e.printStackTrace();          		            
 	            }
 	            	        		        	
 	            if (command.equals("exit")) {

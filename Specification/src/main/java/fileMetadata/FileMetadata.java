@@ -16,13 +16,13 @@ public class FileMetadata {
 	private FileMetadata parent;
 	private Date timeCreated;
 	private Date timeModified;
-	private boolean isFile;
-	private boolean isDirectory;
-	private boolean isStorage;
-	private boolean isDownloadFile;
-	private boolean isDataRoot;
-	private boolean isConfigJSONFile;
-	private boolean isStrorageTreeStructureJSONFile;
+	private Boolean isFile = false;
+	private Boolean isDirectory = false;
+	private Boolean isStorage = false;
+	private Boolean isDownloadFile = false;
+	private Boolean isDataRoot = false;
+	private Boolean isConfigJSONFile = false;
+	private Boolean isStrorageTreeStructureJSONFile = false;
 	
 	//if directory
 	private Integer numOfFilesLimit;
@@ -203,29 +203,41 @@ public class FileMetadata {
 		this.isConfigJSONFile = isConfigJSONFile;
 	}
 	
+
 	public FileMetadata clone() {
+		
 		FileMetadata file = new FileMetadata();
+		
+		file.fileID = this.fileID;
+		file.name = this.name;
+		file.absolutePath = this.absolutePath;
+		file.relativePath = this.relativePath;
+		file.size = this.size;
+		file.parent = this.parent;
+		file.timeCreated = this.timeCreated;
+		file.timeModified = this.timeModified;
+		file.isFile = this.isFile;
+		file.isDirectory = this.isDirectory;
+		file.numOfFilesLimit = this.numOfFilesLimit;
 		
 		return file;
 	}
-	
-	
 
 	@Override
 	public String toString() {
-		final int maxLen = 22;
-		return "FileMetadata [" + (fileID != null ? "fileID=" + fileID + ", " : "")
+		final int maxLen = 10;
+		return (fileID != null ? "fileID=" + fileID + ", " : "")
 				+ (name != null ? "name=" + name + ", " : "")
 				+ (absolutePath != null ? "absolutePath=" + absolutePath + ", " : "")
-				+ (size != null ? "size=" + size + ", " : "") + (parent != null ? "parent=" + parent + ", " : "")
+				+ (relativePath != null ? "relativePath=" + relativePath + ", " : "")
+				+ (size != null && size!=0L ? "size=" + size + ", " : "") + (parent != null ? "parent=" + parent + ", " : "")
 				+ (timeCreated != null ? "timeCreated=" + timeCreated + ", " : "")
-				+ (timeModified != null ? "timeModified=" + timeModified + ", " : "") + "isFile=" + isFile
-				+ ", isDirectory=" + isDirectory + ", isStorage=" + isStorage + ", isDownloadFile=" + isDownloadFile
-				+ ", isDataRoot=" + isDataRoot + ", isConfigJSONFile=" + isConfigJSONFile
-				+ ", isStrorageTreeStructureJSONFile=" + isStrorageTreeStructureJSONFile + ", "
+				+ (timeModified != null ? "timeModified=" + timeModified + ", " : "")
+				+ (isFile != null ? "isFile=" + isFile + ", " : "")
+				+ (isDirectory != null ? "isDirectory=" + isDirectory + ", " : "")
 				+ (numOfFilesLimit != null ? "numOfFilesLimit=" + numOfFilesLimit + ", " : "")
 				+ (storageSize != null ? "storageSize=" + storageSize + ", " : "")
-				+ (unsupportedFiles != null ? "unsupportedFiles=" + toString(unsupportedFiles, maxLen) : "") + "]";
+				+ (unsupportedFiles != null && !unsupportedFiles.isEmpty() ? "unsupportedFiles=" + toString(unsupportedFiles, maxLen) : "") ;
 	}
 
 	private String toString(Collection<?> collection, int maxLen) {
@@ -251,13 +263,13 @@ public class FileMetadata {
 		private FileMetadata parent;
 		private Date timeCreated;
 		private Date timeModified;
-		private boolean isFile;
-		private boolean isDirectory;
-		private boolean isStorage;
-		private boolean isDownloadFile;
-		private boolean isDataRoot;
-		private boolean isConfigJSONFile;
-		private boolean isStrorageTreeStructureJSONFile;
+		private Boolean isFile;
+		private Boolean isDirectory;
+		private Boolean isStorage;
+		private Boolean isDownloadFile;
+		private Boolean isDataRoot;
+		private Boolean isConfigJSONFile;
+		private Boolean isStrorageTreeStructureJSONFile;
 		
 		//if directory
 		private Integer numOfFilesLimit;
@@ -294,31 +306,31 @@ public class FileMetadata {
 			this.parent = parent;
 			return this;
 		}
-		public FileMetadataBuilder withIsFile(boolean isFile) {
+		public FileMetadataBuilder withIsFile(Boolean isFile) {
 			this.isFile = isFile;
 			return this;
 		}
-		public FileMetadataBuilder withIsDirectory(boolean isDirectory) {
+		public FileMetadataBuilder withIsDirectory(Boolean isDirectory) {
 			this.isDirectory = isDirectory;
 			return this;
 		}
-		public FileMetadataBuilder withIsStorage(boolean isStorage) {
+		public FileMetadataBuilder withIsStorage(Boolean isStorage) {
 			this.isStorage = isStorage;
 			return this;
 		}
-		public FileMetadataBuilder withIsDownloadFile(boolean isDownloadFile) {
+		public FileMetadataBuilder withIsDownloadFile(Boolean isDownloadFile) {
 			this.isDownloadFile = isDownloadFile;
 			return this;
 		}
-		public FileMetadataBuilder withIsDataRoot(boolean isDataRoot) {
+		public FileMetadataBuilder withIsDataRoot(Boolean isDataRoot) {
 			this.isDataRoot = isDataRoot; 
 			return this;
 		}
-		public FileMetadataBuilder withIsConfigJSONFile(boolean isConfigJSONFile) {
+		public FileMetadataBuilder withIsConfigJSONFile(Boolean isConfigJSONFile) {
 			this.isConfigJSONFile = isConfigJSONFile;
 			return this;
 		}
-		public FileMetadataBuilder withIsStrorageTreeStructureJSONFile(boolean isStrorageTreeStructureJSONFile) {
+		public FileMetadataBuilder withIsStrorageTreeStructureJSONFile(Boolean isStrorageTreeStructureJSONFile) {
 			this.isStrorageTreeStructureJSONFile = isStrorageTreeStructureJSONFile;
 			return this;
 		}

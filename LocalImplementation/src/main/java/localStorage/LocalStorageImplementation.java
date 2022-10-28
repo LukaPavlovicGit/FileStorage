@@ -387,7 +387,7 @@ public class LocalStorageImplementation extends Storage {
 			path = StorageManager.getInstance().getStorageInformation().getStorageDirectory().getAbsolutePath() + File.separator + StorageInformation.storageInformationJSONFileName;
 		
 			StorageManager.getInstance().getStorageInformation().setCurrentDirectory(StorageManager.getInstance().getStorageInformation().getDatarootDirectory());
-			jsonString = gson.toJson((StorageInformation) obj);
+			jsonString = gson.toJson(StorageManager.getInstance().getStorageInformation());
 		}
 		
 		if(path == null || jsonString == null)
