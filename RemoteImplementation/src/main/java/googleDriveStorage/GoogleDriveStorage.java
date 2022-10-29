@@ -2,7 +2,6 @@ package googleDriveStorage;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,7 +16,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 
@@ -27,12 +25,7 @@ import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.googleapis.json.GoogleJsonResponseException;
-import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
@@ -40,18 +33,12 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.security.GeneralSecurityException;
-import java.util.Collections;
-import java.util.List;
+import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.Drive.Files;
+import com.google.api.services.drive.model.File;
 
-import configuration.StorageConfiguration;
 import exception.DirectoryException;
 import exception.NamingPolicyException;
 import exception.NotFound;
@@ -400,43 +387,30 @@ public class GoogleDriveStorage extends Storage {
 		try {
 			// ako u direktorijumu vec postoji fajl sa imenom newName, konkateniramo ga sa '*'			
 			newName = renameFileMetadata(filePath, newName);			
-			File f = getLastFileOnPath(getAbsolutePath(filePath), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());	
-			
-//			File updated = f.clone();
-//			updated.setName(newName);
-//								
-//			service.files().delete(f.getId());
-//			service.files().create(updated).setFields("id").execute();					
-//			
-		} catch(NotFound /*| IOException*/ e) {
+	
+		} catch(NotFound e) {
 			e.printStackTrace();
+			return false;
+		}
+		
+		File f = getLastFileOnPath(getAbsolutePath(filePath), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());	
+		
+		try {
+			// First create a new File.
+			File file = new File();
+
+			// File's new metadata.
+			file.setName(newName);
+					
+			// Send the request to the API.
+			File updatedFile = service.files().update(f.getId(), file).execute();
+			
+		} catch (IOException e) {			
+			return false;
 		}
 		
 		return true;
-		
-//		try {
-//		      // First retrieve the file from the API.
-//		      File file = service.files().get(fileId).execute();
-//
-//		      // File's new metadata.
-//		      file.setTitle(newTitle);
-//		      file.setDescription(newDescription);
-//		      file.setMimeType(newMimeType);
-//
-//		      // File's new content.
-//		      java.io.File fileContent = new java.io.File(newFilename);
-//		      FileContent mediaContent = new FileContent(newMimeType, fileContent);
-//
-//		      // Send the request to the API.
-//		      File updatedFile = service.files().update(fileId, file, mediaContent).execute();
-//
-//		      return updatedFile;
-//		    } catch (IOException e) {
-//		      System.out.println("An error occurred: " + e);
-//		      return null;
-//		    }
-//		  }
-		
+				
 	}
 
 	@Override
@@ -799,7 +773,8 @@ public class GoogleDriveStorage extends Storage {
 			    
 		    	do {
 			      FileList result = service.files().list()
-			          .setQ("'" + parentID + "'" + " in parents")
+			    	  .setQ("trashed = 'false'")
+			          .setQ("'" + parentID + "'" + " in parents" )			          
 			          .setSpaces("drive")
 			          .setFields("nextPageToken, files(id,size,mimeType,parents,name,trashed)")
 			          .setPageToken(pageToken)
