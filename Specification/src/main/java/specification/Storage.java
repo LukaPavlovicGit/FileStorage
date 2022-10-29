@@ -793,8 +793,14 @@ public abstract class Storage {
 		if(!path.startsWith(dataRootAbsolutePath) && !path.startsWith(dataRootRelativePath)) 
 			relativePath = Paths.get(storageInformation.getCurrentDirectory().getRelativePath()).resolve(Paths.get(path));
 		
+		else if(path.startsWith(dataRootRelativePath)) 
+			relativePath = Paths.get(path);
+			/* npr. ako je :
+								path = storage\dataRootDirectory\dir1\dir2
+					 relativePath je = storage\dataRootDirectory\dir1\dir2
+			*/
 		else if(path.startsWith(dataRootAbsolutePath)){
-			path = path.substring(dataRootAbsolutePath.length() + File.separator.length());
+			path = path.substring(dataRootAbsolutePath.length());
 			relativePath = Paths.get(storageInformation.getDatarootDirectory().getRelativePath()).resolve(Paths.get(path));
 		
 			 /* npr. ako je:
@@ -803,13 +809,7 @@ public abstract class Storage {
 				   		   novi path je = dir1\dir2
 			            relativePath je = storage\dataRootDirectory\dir1\dir2
 			 */			
-		}
-		else if(path.startsWith(dataRootRelativePath)) 
-			relativePath = Paths.get(path);
-			/* npr. ako je :
-								path = storage\dataRootDirectory\dir1\dir2
-					 relativePath je = storage\dataRootDirectory\dir1\dir2
-			*/
+		}	
 		
 		return relativePath;
 	}
@@ -823,7 +823,7 @@ public abstract class Storage {
 		if(!path.startsWith(dataRootAbsolutePath) && !path.startsWith(dataRootRelativePath))
 			path = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + path;		
 		else if(path.startsWith(dataRootRelativePath)) 
-			path = storageInformation.getDatarootDirectory().getAbsolutePath() + File.separator + path.substring(dataRootRelativePath.length() + File.separator.length());
+			path = storageInformation.getDatarootDirectory().getAbsolutePath() + File.separator + path.substring(dataRootRelativePath.length());
 		
 		return Paths.get(path);
 	}
