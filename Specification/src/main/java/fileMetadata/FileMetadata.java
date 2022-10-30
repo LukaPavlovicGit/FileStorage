@@ -19,10 +19,7 @@ public class FileMetadata {
 	private Boolean isFile = false;
 	private Boolean isDirectory = false;
 	private Boolean isStorage = false;
-	private Boolean isDownloadFile = false;
 	private Boolean isDataRoot = false;
-	private Boolean isConfigJSONFile = false;
-	private Boolean isStrorageTreeStructureJSONFile = false;
 	
 	//if directory
 	private Integer numOfFilesLimit;
@@ -47,10 +44,7 @@ public class FileMetadata {
 		this.isFile = builder.isFile;
 		this.isDirectory = builder.isDirectory;
 		this.isStorage = builder.isStorage;
-		this.isDownloadFile = builder.isDownloadFile;
 		this.isDataRoot = builder.isDataRoot;
-		this.isConfigJSONFile = builder.isConfigJSONFile;
-		this.isStrorageTreeStructureJSONFile = builder.isStrorageTreeStructureJSONFile;
 		
 		this.numOfFilesLimit = builder.numOfFilesLimit;
 		
@@ -142,14 +136,6 @@ public class FileMetadata {
 	public void setStorage(boolean isStorage) {
 		this.isStorage = isStorage;
 	}
-	
-	public boolean isDownloadFile() {
-		return isDownloadFile;
-	}
-
-	public void setDownloadFile(boolean isDownloadFile) {
-		this.isDownloadFile = isDownloadFile;
-	}
 
 	public boolean isDataRoot() {
 		return isDataRoot;
@@ -157,14 +143,6 @@ public class FileMetadata {
 
 	public void setDataRoot(boolean isDataRoot) {
 		this.isDataRoot = isDataRoot;
-	}
-
-	public boolean isStrorageTreeStructureJSONFile() {
-		return isStrorageTreeStructureJSONFile;
-	}
-
-	public void setStrorageTreeStructureJSONFile(boolean isStrorageTreeStructureJSONFile) {
-		this.isStrorageTreeStructureJSONFile = isStrorageTreeStructureJSONFile;
 	}
 
 	public Integer getNumOfFilesLimit() {
@@ -189,18 +167,6 @@ public class FileMetadata {
 
 	public void setUnsupportedFiles(Set<String> unsupportedFiles) {
 		this.unsupportedFiles = unsupportedFiles;
-	}
-
-	public boolean isConfigJSONFile() {
-		return isConfigJSONFile;
-	}
-
-	public boolean isConfigFile() {
-		return isConfigJSONFile;
-	}
-
-	public void setConfigJSONFile(boolean isConfigJSONFile) {
-		this.isConfigJSONFile = isConfigJSONFile;
 	}
 	
 
@@ -266,10 +232,7 @@ public class FileMetadata {
 		private Boolean isFile;
 		private Boolean isDirectory;
 		private Boolean isStorage;
-		private Boolean isDownloadFile;
 		private Boolean isDataRoot;
-		private Boolean isConfigJSONFile;
-		private Boolean isStrorageTreeStructureJSONFile;
 		
 		//if directory
 		private Integer numOfFilesLimit;
@@ -318,20 +281,8 @@ public class FileMetadata {
 			this.isStorage = isStorage;
 			return this;
 		}
-		public FileMetadataBuilder withIsDownloadFile(Boolean isDownloadFile) {
-			this.isDownloadFile = isDownloadFile;
-			return this;
-		}
 		public FileMetadataBuilder withIsDataRoot(Boolean isDataRoot) {
 			this.isDataRoot = isDataRoot; 
-			return this;
-		}
-		public FileMetadataBuilder withIsConfigJSONFile(Boolean isConfigJSONFile) {
-			this.isConfigJSONFile = isConfigJSONFile;
-			return this;
-		}
-		public FileMetadataBuilder withIsStrorageTreeStructureJSONFile(Boolean isStrorageTreeStructureJSONFile) {
-			this.isStrorageTreeStructureJSONFile = isStrorageTreeStructureJSONFile;
 			return this;
 		}
 		public FileMetadataBuilder withNumOfFilesLimit(Integer num) {
