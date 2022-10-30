@@ -35,10 +35,6 @@ import com.google.api.services.drive.model.FileList;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import com.google.api.services.drive.Drive;
-import com.google.api.services.drive.Drive.Files;
-import com.google.api.services.drive.model.File;
-
 import exception.DirectoryException;
 import exception.NamingPolicyException;
 import exception.NotFound;
@@ -330,7 +326,7 @@ public class GoogleDriveStorage extends Storage {
 		return true;
 	}
 
-	@Override // resi ako folder ima file limit!!!!
+	@Override
 	public boolean remove(String filePath) throws StorageConnectionException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
@@ -346,10 +342,10 @@ public class GoogleDriveStorage extends Storage {
 		File f = getLastFileOnPath(getAbsolutePath(filePath), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
 		
 		try {
-			if(f.getMimeType().equals("application/vnd.google-apps.folder"))
-				remove(f);			
-			else 		
-				service.files().delete(f.getId()).execute();							
+//			if(f.getMimeType().equals("application/vnd.google-apps.folder"))
+//				remove(f);			
+//			else 		
+			service.files().delete(f.getId()).execute();							
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -359,24 +355,24 @@ public class GoogleDriveStorage extends Storage {
 		return true;
 	}
 	
-	private void remove(File directory) {
-		
-		try {
-			
-			List<File> files = getFilesByParentId(directory.getId());
-			
-			for(File f : files) {
-				if(f.getMimeType().equals("application/vnd.google-apps.folder")) 
-					remove(f);				
-								
-				service.files().delete(f.getId()).execute();							
-			}					
-			//service.files().delete(directory.getId()).execute();	
-		
-		} catch (IOException e) {			
-			e.printStackTrace();
-		}
-	}
+//	private void remove(File directory) {
+//		
+//		try {
+//			
+//			List<File> files = getFilesByParentId(directory.getId());
+//			
+//			for(File f : files) {
+//				if(f.getMimeType().equals("application/vnd.google-apps.folder")) 
+//					remove(f);				
+//								
+//				service.files().delete(f.getId()).execute();							
+//			}					
+//			//service.files().delete(directory.getId()).execute();	
+//		
+//		} catch (IOException e) {			
+//			e.printStackTrace();
+//		}
+//	}
 
 	@Override
 	public boolean rename(String filePath, String newName) throws StorageConnectionException {
@@ -403,7 +399,7 @@ public class GoogleDriveStorage extends Storage {
 			file.setName(newName);
 					
 			// Send the request to the API.
-			File updatedFile = service.files().update(f.getId(), file).execute();
+			service.files().update(f.getId(), file).execute();
 			
 		} catch (IOException e) {			
 			return false;
@@ -491,93 +487,78 @@ public class GoogleDriveStorage extends Storage {
 	}
 
 	@Override // obezbediti i funcionalnist i ako destinacija ne postoji
-	public boolean copyFile(String filePath, String dest) throws NotFound, StorageConnectionException {
+	public boolean copyFile(String src, String dest) throws NotFound, StorageConnectionException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
-			
-		File srcFile = getLastFileOnPath(getAbsolutePath(filePath), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
-		File destFile = getLastFileOnPath(getAbsolutePath(dest), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
-		
-		if(destFile == null) { // treba implementirati da ako neki directory na putanji ne postoji da se napravi (i u specifikaciji i ina local/remote storage)
-			try {
-				createDirectory(dest);
-				destFile = getLastFileOnPath(Paths.get(dest), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
-				
-			} catch (StorageSizeException | NamingPolicyException | DirectoryException | StorageConnectionException e) {
-				e.printStackTrace();
-			}
-			
-			if(destFile == null)
-				System.out.println("JBG NESTO SI ZAJEBO");
-		}
-		
+							
 		try {
-			copyFileMetadata(filePath, dest);
+			copyFileMetadata(src, dest);
 		} catch (NotFound | DirectoryException | StorageSizeException | OperationNotAllowed e) {
 			e.printStackTrace();
 			return false;
 		}
 		
-		if(srcFile.getMimeType().equals("application/vnd.google-apps.folder")) {
-			if(copyFile(srcFile, dest))
-				System.out.println("Successfully copied!");
-			else
-				System.out.println("NJET Unuccessfully NOOOO!!");
-		}
+		File srcFile = getLastFileOnPath(getAbsolutePath(src), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
+		File destFile = getLastFileOnPath(getAbsolutePath(dest), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());	
+		
+		if(srcFile.getMimeType().equals("application/vnd.google-apps.folder")) 
+			copyFiles(src, srcFile.getName(), destFile.getId());
 		
 		else if(srcFile.getMimeType().equals("application/vnd.google-apps.document")) {
 			
+			 File copy = new File();
+			 copy.setParents(Collections.singletonList(destFile.getId()));
+			 copy.setName(srcFile.getName());
+			 
 			try {
-				createFile(dest + java.io.File.separator + srcFile.getName());
-			} catch (StorageSizeException | NamingPolicyException | UnsupportedFileException | StorageConnectionException e) {
-				// TODO Auto-generated catch block
+				service.files().copy(srcFile.getId(), copy).execute();
+			} catch (IOException e) {				
 				e.printStackTrace();
-				return false;
 			}
-			
-			
-//			 File copy = new File();
-//			 copy.setParents(Collections.singletonList(destFile.getId()));
-//			 copy.setName(srcFile.getName());
-//			 
-//			 try {
-//				service.files().copy(destFile.getId(), copy).execute();
-//			} catch (IOException e) {				
-//				e.printStackTrace();
-//			}
 		}
 		
 		return true;
 
 	}
 	
-	private boolean copyFile(File srcFile, String dest) {
-				
+	private void copyFiles(String src, String fileName, String parentId) {
+		
+		File srcFile = getLastFileOnPath(getAbsolutePath(src), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
 		List<File> toBeCopied = getFilesByParentId(srcFile.getId());
-		File destFile = getLastFileOnPath(Paths.get(dest), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());
+		
+		File FileMetadata = new File();
+		FileMetadata.setMimeType("application/vnd.google-apps.folder");
+		FileMetadata.setParents(Collections.singletonList(parentId));
+		FileMetadata.setName(fileName);		
+		
+		File parent = null;
+		try {
+			parent = service.files().create(FileMetadata).setFields("id").execute();
+		} catch (IOException e) {				
+			e.printStackTrace();
+			return;
+		}
 		
 		for(File f : toBeCopied) {
 			
-			if(f.getMimeType().equals("application/vnd.google-apps.folder")) {
-				try {
-					createDirectory(dest + java.io.File.separator + f.getName());
-					copyFile(f, dest + java.io.File.separator + f.getName());
-				} catch (StorageSizeException | NamingPolicyException | DirectoryException	| StorageConnectionException e) {
-					e.printStackTrace();
-				}
-			}
+			if(f.getMimeType().equals("application/vnd.google-apps.folder")) 
+				copyFiles(src + java.io.File.separator + f.getName(), f.getName(), parent.getId());
+
 			else if(f.getMimeType().equals("application/vnd.google-apps.document")) {
-				try {
-					createFile(dest + java.io.File.separator + srcFile.getName());
-				} catch (StorageSizeException | NamingPolicyException | UnsupportedFileException | StorageConnectionException e) {
-					// TODO Auto-generated catch block
+				 
+				File copy = new File();
+				 copy.setParents(Collections.singletonList(parent.getId()));
+				 copy.setName(srcFile.getName());
+				 
+				 try {
+					service.files().copy(srcFile.getId(), copy).execute();
+				} catch (IOException e) {				
 					e.printStackTrace();
-				}								 				
+				}				 				
 			}
 		}
 		
-		return true;
 	}
 
 	@Override
