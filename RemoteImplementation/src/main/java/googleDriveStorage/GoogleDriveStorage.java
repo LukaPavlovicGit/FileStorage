@@ -141,7 +141,7 @@ public class GoogleDriveStorage extends Storage {
 	
 	@Override
 	public boolean createStorage(String dest)
-			throws StorageException, NamingPolicyException, PathException, StorageConnectionException, StoragePathException {
+			throws NamingPolicyException, PathException, StorageConnectionException, StoragePathException {
 			
 			if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
 				throw new StorageConnectionException("Disconnect from the current storage in order to create new one storage!");	
@@ -211,7 +211,7 @@ public class GoogleDriveStorage extends Storage {
 
 	@Override
 	public boolean createDirectory(String dest, Integer... filesLimit)
-			throws StorageSizeException, NamingPolicyException, DirectoryException, StorageConnectionException {
+			throws StorageSizeException, DirectoryException, StorageConnectionException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -222,9 +222,9 @@ public class GoogleDriveStorage extends Storage {
 			fileMetadata = new FileMetadata();
 			fileMetadata.setDirectory(true);
 			fileMetadata.setNumOfFilesLimit( (filesLimit.length > 0) ? filesLimit[0] : null );
-			addFileMetadataToStorage(dest, fileMetadata); 
+			dest = addFileMetadataToStorage(dest, fileMetadata); 
 			
-		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
+		} catch (NotFound | StorageSizeException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
 			e.printStackTrace();
 		}
 		
@@ -250,7 +250,7 @@ public class GoogleDriveStorage extends Storage {
 	
 	@Override
 	public boolean createFile(String dest)
-			throws StorageSizeException, NamingPolicyException, UnsupportedFileException, StorageConnectionException {
+			throws StorageSizeException, UnsupportedFileException, StorageConnectionException {
 
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -260,9 +260,9 @@ public class GoogleDriveStorage extends Storage {
 		try {			
 			fileMetadata = new FileMetadata();
 			fileMetadata.setFile(true);			
-			addFileMetadataToStorage(dest, fileMetadata);
+			dest = addFileMetadataToStorage(dest, fileMetadata);
 			
-		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
+		} catch (NotFound | StorageSizeException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
 			e.printStackTrace();
 		}
 		

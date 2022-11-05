@@ -44,7 +44,7 @@ public class LocalStorageImplementation extends Storage {
 	// onemoguciti da se u okviru storege-a pravi drugi storage
 	@Override
 	public boolean createStorage(String dest) 
-			throws StorageException, NamingPolicyException, PathException, StorageConnectionException, StoragePathException {
+			throws NamingPolicyException, PathException, StorageConnectionException, StoragePathException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
 			throw new StorageConnectionException("Disconnect from the current storage in order to create the new  one storage!");
@@ -140,9 +140,9 @@ public class LocalStorageImplementation extends Storage {
 			FileMetadata fileMetadata = new FileMetadata();
 			fileMetadata.setDirectory(true);
 			fileMetadata.setNumOfFilesLimit( filesLimit.length>0 ? filesLimit[0] : null );
-			addFileMetadataToStorage(dest, fileMetadata, filesLimit);
+			dest = addFileMetadataToStorage(dest, fileMetadata, filesLimit);
 
-		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
+		} catch (NotFound | StorageSizeException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -154,18 +154,18 @@ public class LocalStorageImplementation extends Storage {
 	public boolean createFile(String dest) throws StorageConnectionException {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
-			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");				
 		
 		try {			
 			FileMetadata fileMetadata = new FileMetadata();
 			fileMetadata.setFile(true);
-			addFileMetadataToStorage(dest, fileMetadata);
+			dest = addFileMetadataToStorage(dest, fileMetadata);
 		
-		} catch (NotFound | StorageSizeException | NamingPolicyException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
+		} catch (NotFound | StorageSizeException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
 			e.printStackTrace();
 		}
 						
-		try {			
+		try {	
 			return new File(getAbsolutePath(dest).toString()).createNewFile();
 			
 		} catch (IOException e) {
