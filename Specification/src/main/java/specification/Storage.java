@@ -42,11 +42,11 @@ public abstract class Storage {
 	
     /**
      * Creates a new storage and connects to it upon its creation. 
-     * 
+     * Creation of the storage also requires creation of one more directory which will be root directory for the data and
+     * one more file which will hold the information necessary to storage works properly. 
+     * After that, it is necessary to call function 'createStorageTreeStructure(dest)' which will create structure which describes storage paths and it's content if some of paths denotes directories
      * @param dest is a path to the new storage. Last name on the path represents a storage name
-     * 
      * @return true if storage is successfully created, false otherwise
-     * 
      * @throws NamingPolicyException if parent directory contains a file or a folder with the same name as storage name
      * @throws PathException if path is incorret
      * @throws StorageConnectionException if other storage is already connected
@@ -57,11 +57,8 @@ public abstract class Storage {
 	
 	/**
 	 * Connects to the storage which reside on the path given by src
-	 * 
 	 * @param src is path to the existing storage
-	 * 
 	 * @return true if successfully connected, false otherwise
-	 * 
 	 * @throws NotFound if some directory along the path does not exist
 	 * @throws StorageException if given path does not represent the storage
 	 * @throws PathException if path is incorrect
@@ -72,21 +69,17 @@ public abstract class Storage {
 	
 	/**
 	 * Disconnects from the currently connected storage
-	 * 
 	 * @return true if successfully disconnected, false otherwise
 	 */
 	public abstract boolean disconnectFromStorage(); // discon
 	
 	
 	/**
-	 * Creates directory
-	 * 
+	 * Creates directory.  Before creating a file it's necessery to create FileMetadata with 'isDirectory' attribute set to true, which will describe the directory which is intended to create and to call function 'addFileMetadataToStorage(dest, fileMetadata)'
 	 * @param dest is a path to the new directory. Last name on the path represents a directory name. 
 	 * 		  If the name already exists in the destination folder then the name will be concatenated with a number to make the it unique in the residing directory
 	 * @param filesLimit is the maximum number of files and directoris that created directory can hold
-	 * 
 	 * @return true if directory is successfully created, false otherwise
-	 * 
 	 * @throws StorageSizeException if there is no anymore free space in the storage
 	 * @throws DirectoryException if the number of files and folders which parent directory can hold is reached
 	 * @throws StorageConnectionException if storage is not connected
@@ -97,11 +90,9 @@ public abstract class Storage {
 	
 	/**
 	 * Creates a list of directories
-	 * 
 	 * @param dest is the path to the the destination folder where the new directories will be created
 	 *		  If some of names already exists in the destination folder then the name will be concatenated with a number to make the it unique in the residing directory
-	 * @param dirNameAndFilesLimit is a map where keys represents directories names to be created and its values represents maximum number of files and directoris that created directories can hold respectively 
-	 *
+	 * @param dirNameAndFilesLimit is a map where keys represents directories names to be created and its values represents maximum number of files and directoris that created directories can hold respectively
 	 * @return true if directories are successfully created, false otherwise
 	 */
 	public boolean createDirectories(String dest, Map<String, Integer> dirNameAndFilesLimit ) { //mkdirs
@@ -121,13 +112,10 @@ public abstract class Storage {
 	
 	
 	/**
-	 * Creates a file
-	 * 
+	 * Creates a file. Before creating a file it's necessery to create FileMetadata with 'isFile' attribute set to true, which will describe the file which is intended to create and to call function 'addFileMetadataToStorage(dest, fileMetadata)'
 	 * @param dest is a path to the new directory. Last name on the path represents a directory name. 
 	 * 		  If the name already exists in the destination folder then the name will be concatenated with a number to make the it unique in the directory
-	 *
 	 * @return true if successfully connected, false otherwise
-	 * 
 	 * @throws StorageSizeException if there is no anymore free space in the storage
 	 * @throws UnsupportedFileException if file has extension which storage does not support
 	 * @throws DirectoryException if the number of files and folders which parent directory can hold is reached
@@ -139,11 +127,9 @@ public abstract class Storage {
 	
 	/**
 	 * Creates a list of files
-	 * 
 	 * @param dest is the path to the the destination folder where the new directories will be created 
 	 * @param names is the list of file namse to be created. 
 	 * 		  If some of names already exists in the destination folder then the name will be concatenated with a number to make the it unique in the residing directory
-	 * 
 	 * @return true if files are successfully created, false otherwise
 	 */
 	public boolean createFiles(String dest, List<String> names) { // mkfiles
@@ -162,13 +148,10 @@ public abstract class Storage {
 	
 	
 	/**
-	 * Moves the file or directory to the other destination. 
-	 * 
+	 * Moves the file or directory to the other destination. Before moving the file or directory it's necessery to call 'moveFileMetadata(src, newDest)' which will move FileMetadata (which describes the file or directory) to the new destination
 	 * @param filePath is path to the file to be moved
 	 * @param newDest is path to the destination folder
-	 *
-	 * @return true if file or directory is successfully move, false otherwise
-	 * 
+	 * @return true if file or directory is successfully moved, false otherwise
 	 * @throws NotFound if file to be moved or destionation folder does not exist
 	 * @throws DirectoryException if the number of files and folders which parent directory can hold is reached 
 	 * @throws StorageConnectionException if storage is not connected
@@ -177,12 +160,9 @@ public abstract class Storage {
 	
 	
 	/**
-	 * Deletes the file or directory
-	 * 
+	 * Deletes the file or directory. Before deleting file it's necessery to call function 'removeFileMetadataFromStorage(path)' to remove FileMetadata which describes file or directory which is intended to be deleted
 	 * @param filePath is the path to the file or directory to be deleted
-	 *
 	 * @return true if file or directory is successfully deleted, false otherwise
-	 * 
 	 * @throws NotFound if the file or directory to be deleted does not exist
 	 * @throws StorageConnectionException if storage is not connected
 	 */
@@ -190,13 +170,10 @@ public abstract class Storage {
 	
 	
 	/**
-	 * Renames the file or directory
-	 * 
+	 * Renames the file or directory. Before renaming the file it's necessery to call 'removeFileMetadataFromStorage(path)' to rename FileMetadata which describes file or directory which is intended to be renamed
 	 * @param filePath is the path to the file or directory to be renamed
 	 * @param newName is the name which will replace the old one
-	 *
 	 * @return true if file or directory is successfully renamed, false otherwise
-	 * 
 	 * @throws NotFound if the file or directory to be renamed does not exist
 	 * @throws StorageConnectionException if storage is not connected
 	 */
@@ -205,12 +182,9 @@ public abstract class Storage {
 	
 	/**
 	 * Downloads the file or directory
-	 * 
 	 * @param filePath is the path to the file or directory to be downloaded
 	 * @param downloadDest is the destination folder for downloaded items
-	 *
 	 * @return true if file or directory is successfully downloaded, false otherwise
-	 *
 	 * @throws NotFound if the file or directory to be downloaded does not exist
 	 * @throws StorageConnectionException if storage is not connected
 	 * @throws PathException if destination path is incorrect
@@ -219,13 +193,10 @@ public abstract class Storage {
 	
 	
 	/**
-	 * Copies the file or directory
-	 * 
+	 * Copies the file or directory. Before coping the file or directory it's necessery to call function 'copyFileMetadata(src, dest)' to copy FileMetadata which describes file or directory which is intended to be copied to the destination dest
 	 * @param filePath is the path to the file or directory to be copied
 	 * @param dest is the destination folder where the file or directory will be copied
-	 * 
 	 * @return true if file or directory is successfully copied, false otherwise
-	 * 
 	 * @throws NotFound if file to be copied or destionation folder does not exist
 	 * @throws StorageConnectionException if storage is not connected
 	 */
@@ -233,14 +204,11 @@ public abstract class Storage {
 	
 	
 	/**
-	 * Writes data to the file
-	 * 
-	 * @param filePath is the path to the file or directory to be copied
-	 * @param text is the data to be written
+	 * Writes data to the file. Before writing to the file it's necessery to call function 'writeToFileMetadata(getAbsolutePath(filePath).toString(), text, append)' to set new size FileMetadata which describes file
+	 * @param filePath is the path to the file
+	 * @param text is the data to be written in the file
 	 * @param append if true appends to the existing data in the file, otherwise writes data at the beginning of the file
-	 *
 	 * @return true if data is successfully written in the file, false otherwise
-	 * 
 	 * @throws NotFound if the file to be written in does not exist
 	 * @throws StorageSizeException if there is no anymore free space in the storage
 	 * @throws StorageConnectionException if storage is not connected
@@ -251,11 +219,8 @@ public abstract class Storage {
 	
 	/**
 	 * Checks storage existance along the path
-	 * 
 	 * @param path is the path to be checked
-	 *
 	 * @return true if storage exist along the path, false otherwise
-	 * 
 	 * @throws PathException if the path is incorrect
 	 */
 	protected abstract boolean checkStorageExistence(String path) throws PathException;
@@ -263,7 +228,6 @@ public abstract class Storage {
 	
 	/**
 	 * Saves the object to the JSON file
-	 * 
 	 * @param obj is the object to be saved
 	 */
 	protected abstract void saveToJSON(Object obj);
@@ -271,7 +235,6 @@ public abstract class Storage {
 	
 	/**
 	 * Reads the object from the JSON file
-	 * 
 	 * @param obj is the object to be read
 	 * @param path is the path to JSON file to be read from
 	 */
@@ -280,11 +243,8 @@ public abstract class Storage {
 	
 	/**
 	 * Changes current directory to the specified one
-	 * 
 	 * @param dest is the path to the directory to be changed in
-	 *
 	 * @return true if the directory is successfully changed, false otherwise
-	 * 
 	 * @throws NotFound if the directory does not exist
 	 * @throws StorageConnectionException if storage is not connected
 	 */
@@ -313,11 +273,8 @@ public abstract class Storage {
 	
 	/**
 	 * Checks whether the file or directory exist
-	 * 
 	 * @param src is the path to the potential file or directory
-	 *
 	 * @return true if the file or directory exist, false otherwise
-	 * 
 	 * @throws StorageConnectionException if storage is not connected
 	 */
 	public boolean find(String src) throws StorageConnectionException { // hit
@@ -330,11 +287,8 @@ public abstract class Storage {
 	
 	/**
 	 * Checks whether the files or directories exists
-	 * 
 	 * @param filePaths are the paths to the potential files or directories
-	 * 
 	 * @return for every path returns true if the file or directory exist, false otherwise
-	 * 
 	 * @throws StorageConnectionException if storage is not connected
 	 */
 	public Map<String, Boolean> find(List<String> filePaths) throws StorageConnectionException { // hit -l
@@ -351,11 +305,8 @@ public abstract class Storage {
 	
 	/**
 	 * Tries to find all destionatios for the file or directory with a specified name
-	 * 
 	 * @param name is the name to be searched for
-	
 	 * @return list of all destinations which contains specified name
-	 * 
 	 * @throws StorageConnectionException if storage is not connected
 	 */
 	public List<String> findDestinantions(String name) throws StorageConnectionException { // dest
@@ -383,7 +334,6 @@ public abstract class Storage {
 	
 	/**
 	 * Lists all items from the directory that meet the requirements
-	 * 
 	 * @param src is the path to the directory
 	 * @param onlyDirs if true searches only for directories
 	 * @param onlyFiles if true searches only for files
@@ -392,9 +342,7 @@ public abstract class Storage {
 	 * @param prefix if not null searches only for the items that have given prefix
 	 * @param sufix if not null searches only for the items that have given sufix
 	 * @param subWord if not null searches only for the items that have given subWord
-	 
 	 * @return returns the map where keys represent the relative paths of directories and values are all items which are found in the directory respectively
-	 * 
 	 * @throws NotFound if the directory does not exist
 	 * @throws StorageConnectionException if storage is not connected
 	 */
@@ -475,17 +423,14 @@ public abstract class Storage {
 	}
 	
 	/**
-	 * Sorts result by the given requirements. If some of the requirements are set to true then that requirements is considered in the sorting process 
-	 * 
+	 * Sorts result by the given requirements. If some of the requirements are set to true then that requirements is considered in the sorting process
 	 * @param data is the data upon which the sort is applied
 	 * @param byName
 	 * @param byCreationDate
 	 * @param byModificationDate
 	 * @param ascending
 	 * @param descending
-	 *  
 	 * @return returns the map where keys represent the relative paths of directories and values are sorted items in the directory respectively
-	 * 
 	 * @throws StorageConnectionException if storage is not connected
 	 */
 	public Map<String, List<FileMetadata>> resultSort(Map<String, List<FileMetadata>> data, boolean byName, boolean byCreationDate, 
@@ -533,10 +478,8 @@ public abstract class Storage {
 	}
 	
 	/**
-	 * Filters attributes of the data.  
-	 * 
+	 * Filters attributes of the data.
 	 * @param data is the data upon which filter is applied
-	 * 
 	 * @param atributes : 
 	 * if atributes[0] is set to true then file ID is included
 	 * if atributes[1] is set to true then file name is included
@@ -545,14 +488,11 @@ public abstract class Storage {
 	 * if atributes[4] is set to true then time of creation is included
 	 * if atributes[5] is set to true then time of modifivation is included
 	 * if atributes[6] is set to true then whether file is file is included
-	 * if atributes[7] is set to true then whether file is directory is included
-	 * 
+	 * if atributes[7] is set to true then whether file is directory is included 
 	 * @param periods:
 	 * if periods[0][0] and periods[0][1] are set the then only files which are created between those two periods are included
 	 * if periods[1][0] and periods[1][1] are set the then only files which are modified between those two periods are included
-	 *
 	 * @return returns the map where keys represent the relative paths of directories and values are all items with a filtered attributes
-	 * 
 	 * @throws InvalidArgumentsExcpetion if some of periods are not valid
 	 * @throws StorageConnectionException if storage is not connected
 	 */
@@ -640,9 +580,9 @@ public abstract class Storage {
 	}
 	
 	/**
-	 * 
-	 * @param dest
-	 * @return
+	 * Creates storage tree structure which describes storage paths and it's content if path denotes a directory
+	 * @param dest is path at which storage resides
+	 * @return true if storage tree structure is successfilly created, otherwise false
 	 */
 	protected boolean createStorageTreeStructure(String dest) {
 		
@@ -703,14 +643,24 @@ public abstract class Storage {
 		return true;
 	}
 		
-	// kada se poziva iz drive implementacije, fileMetadata treba da ima podesen fileID !!!!!!
-	// ako postoji numOfFilesLimit za direktorijum onda se u obe implementacije treba podestiti pre nego sto se posalje u specifikaciju
-	// atribute isDirectory i isFile takodje treba da budu podeseni pre prosledjivanja
-	protected String addFileMetadataToStorage(String dest, FileMetadata fileMetadata, Integer... filesLimit) 
+	/**
+	 * Adds FileMetadata and places it in the storage tree structure
+	 * @param dest is a path to the new FileMetadata. Last name on the path represents a FileMetadata name. 
+	 * 		  If the name already exists in the destination folder then the name will be concatenated with a number to make the it unique in the residing directory
+	 * @param fileMetadata is the FileMetadat to be added
+	 * @param filesLimit if FileMetadata is describes directory, then filesLimit is the maximum number of files and directoris that created directory can hold
+	 * @return returns name of the added FileMetadata
+	 * @throws NotFound if some directory along the path does not exist
+	 * @throws StorageSizeException if there is no anymore free space in the storage
+	 * @throws DirectoryException if the number of files and folders which parent directory can hold is reached
+	 * @throws UnsupportedFileException if FileMetadat has extension which storage does not support
+	 * @throws OperationNotAllowed if destination does not represent the directory
+	 */
+	protected String addFileMetadataToStorage(String path, FileMetadata fileMetadata, Integer... filesLimit) 
 			throws NotFound, StorageSizeException, DirectoryException, UnsupportedFileException, OperationNotAllowed {
 		
-		String name = Paths.get(dest).getFileName().toString();
-		dest = Paths.get(dest).getParent().toString(); // parent path
+		String name = Paths.get(path).getFileName().toString();
+		path = Paths.get(path).getParent().toString(); // parent path
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<String, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();
 		FileMetadata storage = StorageManager.getInstance().getStorageInformation().getStorageDirectory();
@@ -727,7 +677,7 @@ public abstract class Storage {
 			}
 		}
 
-		FileMetadata parent = getLastFileMetadataOnPath(getRelativePath(dest), storageTreeStracture);
+		FileMetadata parent = getLastFileMetadataOnPath(getRelativePath(path), storageTreeStracture);
 		
 		// implementiraj da se naprave svi direktorijumi na putanji ako ne postoje
 		if(parent == null)
@@ -779,12 +729,18 @@ public abstract class Storage {
 		return fileMetadata.getAbsolutePath();
 	}
 	
-	protected boolean removeFileMetadataFromStorage(String dest) throws NotFound {
+	/**
+	 * Removes FileMetadata from storage tree structure
+	 * @param path is the path at which FileMetadata resides
+	 * @return true if FileMetadata is successfully removed, otherwise false
+	 * @throws NotFound if the FileMetadata does not exist
+	 */
+	protected boolean removeFileMetadataFromStorage(String path) throws NotFound {
 				
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Map<String, List<FileMetadata>> storageTreeStracture = storageInformation.getStorageTreeStructure();
 								
-		FileMetadata file = getLastFileMetadataOnPath(getRelativePath(dest), storageTreeStracture);
+		FileMetadata file = getLastFileMetadataOnPath(getRelativePath(path), storageTreeStracture);
 		
 		if(file == null)
 			throw new NotFound("Path does not exist!");
@@ -793,6 +749,15 @@ public abstract class Storage {
 		return true;
 	}
 	
+	/**
+	 * Moves FileMetadata to the other destination in the storage tree structure
+	 * @param src is the path to the FileMetada to be moved
+	 * @param newDest is the path to the destination folder
+	 * @return true if FileMetadata is successfully moved, false otherwise
+	 * @throws NotFound if FileMetadata to be moved or destionation folder does not exist
+	 * @throws DirectoryException if the number of files and folders which parent directory can hold is reached 
+	 * @throws OperationNotAllowed if destination folder is a subfolder of the FileMetadata which is intended to be moved
+	 */
 	protected boolean moveFileMetadata(String src, String newDest) throws NotFound, DirectoryException, OperationNotAllowed {
 		
 	
@@ -844,6 +809,14 @@ public abstract class Storage {
 	}
 	
 	
+	/**
+	 * Renames FileMetadata
+	 * @param src is the path to the FileMetadata to be renamed
+	 * @param newName is the name which will replace the old one. 
+	 * 		  If the newName already exists in the destination folder then the newName will be concatenated with a number to make the it unique in the residing directory
+	 * @return returns the newName of the FileMetadata
+	 * @throws NotFound if some of the directories along the way does not exist
+	 */
 	protected String renameFileMetadata(String src, String newName) throws NotFound{
 		
 		Map<String, List<FileMetadata>> storageTreeStracture = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure();
@@ -899,6 +872,16 @@ public abstract class Storage {
 		}
 	}
 	
+	
+	/**
+	 * Copies FileMetadata
+	 * @param src is the path to FileMetadata to be copied
+	 * @param dest is the destination folder where the FileMetadata will be copied
+	 * @throws NotFound if FileMetadata to be copied or destionation folder does not exist
+	 * @throws DirectoryException if the number of files and folders which parent directory can hold is reached
+	 * @throws StorageSizeException if there is no anymore free space in the storage
+	 * @throws OperationNotAllowed if destination folder is a subfolder of the FileMetadata to be copied!
+	 */
 	protected void copyFileMetadata(String src, String dest) throws NotFound, DirectoryException, StorageSizeException, OperationNotAllowed {
 		
 		Map<String, List<FileMetadata>> storageTreeStracture = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure();		
@@ -988,6 +971,17 @@ public abstract class Storage {
 		}		
 	}
 	
+	
+	/**
+	 * Sets new size to the FileMetadata
+	 * @param filePath is the path to the file
+	 * @param text is the data to be written
+	 * @param append if true adds new bytes to the existing bytes in the file, otherwise set FileMetadata size to the size of the text
+	 * @return true if size is set successfully, false otherwise
+	 * @throws NotFound if the file to be written in does not exist
+	 * @throws OperationNotAllowed if path does not represents file
+	 * @throws StorageSizeException if there is no anymore free space in the storage
+	 */
 	protected boolean writeToFileMetadata(String filePath, String text, boolean append) throws NotFound, OperationNotAllowed, StorageSizeException {
 
 		FileMetadata file = getLastFileMetadataOnPath(getRelativePath(filePath), StorageManager.getInstance().getStorageInformation().getStorageTreeStructure());
@@ -1082,6 +1076,12 @@ public abstract class Storage {
 		return true;
 	}
 	
+	
+	/**
+	 * Creates a Path which describes a relative path for the given path
+	 * @param path
+	 * @return Path
+	 */
 	protected Path getRelativePath(String path) {
 		
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
@@ -1114,6 +1114,12 @@ public abstract class Storage {
 		return relativePath;
 	}
 	
+	
+	/**
+	 * Creates a Path which describes a absolute path for the given path
+	 * @param path
+	 * @return Path
+	 */
 	protected Path getAbsolutePath(String path) {
 		
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
