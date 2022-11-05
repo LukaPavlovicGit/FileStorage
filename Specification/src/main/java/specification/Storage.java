@@ -1,5 +1,5 @@
 package specification;
-import java.io.File;
+import java.io.File; 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -7,19 +7,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.script.ScriptEngineFactory;
-
-import configuration.StorageConfiguration;
 import exception.DirectoryException;
 import exception.InvalidArgumentsExcpetion;
 import exception.NamingPolicyException;
@@ -36,18 +31,79 @@ import fileMetadata.FileMetadata.FileMetadataBuilder;
 import storageInformation.StorageInformation;
 import storageManager.StorageManager;
 
+/**
+ * Class that is used for initialising Storage.
+ * 
+ * @author Luka Pavlovic
+ * 
+ */
+
 public abstract class Storage {
 	
+    /**
+     * Creates a new storage and connects to it upon its creation. 
+     * 
+     * @param dest is a path to the new storage. Last name on the path represents a storage name
+     * 
+     * @return true if storage is successfully created, false otherwise
+     * 
+     * @throws NamingPolicyException if parent directory contains a file or a folder with the same name as storage name
+     * @throws PathException if path is incorret
+     * @throws StorageConnectionException if other storage is already connected
+     * @throws StoragePathException if some storage already exists along the path
+     */
 	public abstract boolean createStorage(String dest) 
-			throws StorageException, NamingPolicyException, PathException, StorageConnectionException, StoragePathException; // mkstrg
+			throws NamingPolicyException, PathException, StorageConnectionException, StoragePathException; // mkstrg
 	
+	/**
+	 * Connects to the storage which reside on the path given by src
+	 * 
+	 * @param src is path to the existing storage
+	 * 
+	 * @return true if successfully connected, false otherwise
+	 * 
+	 * @throws NotFound if some directory along the path does not exist
+	 * @throws StorageException if given path does not represent the storage
+	 * @throws PathException if path is incorrect
+	 * @throws StorageConnectionException if storage is not connected
+	 */
 	public abstract boolean connectToStorage(String src) throws NotFound, StorageException, PathException, StorageConnectionException; // con
 	
+	
+	/**
+	 * Disconnects from the currently connected storage
+	 * 
+	 * @return true if successfully disconnected, false otherwise
+	 */
 	public abstract boolean disconnectFromStorage(); // discon
 	
-	public abstract boolean createDirectory(String dest, Integer... filesLimit) 
-			throws StorageSizeException, NamingPolicyException, DirectoryException, StorageConnectionException; // mkdir
 	
+	/**
+	 * Creates directory
+	 * 
+	 * @param dest is a path to the new directory. Last name on the path represents a directory name. 
+	 * 		  If the name already exists in the destination folder then the name will be concatenated with a number to make the it unique in the residing directory
+	 * @param filesLimit is the maximum number of files and directoris that created directory can hold
+	 * 
+	 * @return true if directory is successfully created, false otherwise
+	 * 
+	 * @throws StorageSizeException if there is no anymore free space in the storage
+	 * @throws DirectoryException if the number of files and folders which parent directory can hold is reached
+	 * @throws StorageConnectionException if storage is not connected
+	 */
+	public abstract boolean createDirectory(String dest, Integer... filesLimit) 
+			throws StorageSizeException, DirectoryException, StorageConnectionException; // mkdir
+	
+	
+	/**
+	 * Creates a list of directories
+	 * 
+	 * @param dest is the path to the the destination folder where the new directories will be created
+	 *		  If some of names already exists in the destination folder then the name will be concatenated with a number to make the it unique in the residing directory
+	 * @param dirNameAndFilesLimit is a map where keys represents directories names to be created and its values represents maximum number of files and directoris that created directories can hold respectively 
+	 *
+	 * @return true if directories are successfully created, false otherwise
+	 */
 	public boolean createDirectories(String dest, Map<String, Integer> dirNameAndFilesLimit ) { //mkdirs
 		try {
 			
@@ -56,24 +112,47 @@ public abstract class Storage {
 				createDirectory(dest + File.separator + name, filesLimit);		
 			}
 			
-		} catch (StorageSizeException | DirectoryException | NamingPolicyException | StorageConnectionException e) {
+		} catch (StorageSizeException | DirectoryException | StorageConnectionException e) {
 			e.printStackTrace();
 			return false;
 		}
 		return true;
 	}
 	
-	public abstract boolean createFile(String dest) 
-			throws StorageSizeException, NamingPolicyException, UnsupportedFileException, StorageConnectionException; // mkfile
 	
+	/**
+	 * Creates a file
+	 * 
+	 * @param dest is a path to the new directory. Last name on the path represents a directory name. 
+	 * 		  If the name already exists in the destination folder then the name will be concatenated with a number to make the it unique in the directory
+	 *
+	 * @return true if successfully connected, false otherwise
+	 * 
+	 * @throws StorageSizeException if there is no anymore free space in the storage
+	 * @throws UnsupportedFileException if file has extension which storage does not support
+	 * @throws DirectoryException if the number of files and folders which parent directory can hold is reached
+	 * @throws StorageConnectionException if storage is not connected
+	 */
+	public abstract boolean createFile(String dest) 
+			throws StorageSizeException, UnsupportedFileException, DirectoryException, StorageConnectionException; // mkfile
+	
+	
+	/**
+	 * Creates a list of files
+	 * 
+	 * @param dest is the path to the the destination folder where the new directories will be created 
+	 * @param names is the list of file namse to be created. 
+	 * 		  If some of names already exists in the destination folder then the name will be concatenated with a number to make the it unique in the residing directory
+	 * 
+	 * @return true if files are successfully created, false otherwise
+	 */
 	public boolean createFiles(String dest, List<String> names) { // mkfiles
 		try {
 		
-			for(String name : names) {
+			for(String name : names) 
 				createFile(dest + File.separator + name);
-			}
 		
-		} catch (StorageSizeException | NamingPolicyException | UnsupportedFileException | StorageConnectionException e) {	
+		} catch (StorageSizeException | UnsupportedFileException | StorageConnectionException | DirectoryException e) {	
 			e.printStackTrace();
 			return false;
 		}
@@ -81,24 +160,134 @@ public abstract class Storage {
 		return true;
 	}
 	
+	
+	/**
+	 * Moves the file or directory to the other destination. 
+	 * 
+	 * @param filePath is path to the file to be moved
+	 * @param newDest is path to the destination folder
+	 *
+	 * @return true if file or directory is successfully move, false otherwise
+	 * 
+	 * @throws NotFound if file to be moved or destionation folder does not exist
+	 * @throws DirectoryException if the number of files and folders which parent directory can hold is reached 
+	 * @throws StorageConnectionException if storage is not connected
+	 */
 	public abstract boolean move(String filePath, String newDest) throws NotFound, DirectoryException, StorageConnectionException; // move 
 	
+	
+	/**
+	 * Deletes the file or directory
+	 * 
+	 * @param filePath is the path to the file or directory to be deleted
+	 *
+	 * @return true if file or directory is successfully deleted, false otherwise
+	 * 
+	 * @throws NotFound if the file or directory to be deleted does not exist
+	 * @throws StorageConnectionException if storage is not connected
+	 */
 	public abstract boolean remove(String filePath) throws NotFound, StorageConnectionException; // del
 	
+	
+	/**
+	 * Renames the file or directory
+	 * 
+	 * @param filePath is the path to the file or directory to be renamed
+	 * @param newName is the name which will replace the old one
+	 *
+	 * @return true if file or directory is successfully renamed, false otherwise
+	 * 
+	 * @throws NotFound if the file or directory to be renamed does not exist
+	 * @throws StorageConnectionException if storage is not connected
+	 */
 	public abstract boolean rename(String filePath, String newName) throws NotFound, StorageConnectionException; // rename
 	
+	
+	/**
+	 * Downloads the file or directory
+	 * 
+	 * @param filePath is the path to the file or directory to be downloaded
+	 * @param downloadDest is the destination folder for downloaded items
+	 *
+	 * @return true if file or directory is successfully downloaded, false otherwise
+	 *
+	 * @throws NotFound if the file or directory to be downloaded does not exist
+	 * @throws StorageConnectionException if storage is not connected
+	 * @throws PathException if destination path is incorrect
+	 */
 	public abstract boolean download(String filePath, String downloadDest) throws NotFound, StorageConnectionException, PathException; // download
 	
+	
+	/**
+	 * Copies the file or directory
+	 * 
+	 * @param filePath is the path to the file or directory to be copied
+	 * @param dest is the destination folder where the file or directory will be copied
+	 * 
+	 * @return true if file or directory is successfully copied, false otherwise
+	 * 
+	 * @throws NotFound if file to be copied or destionation folder does not exist
+	 * @throws StorageConnectionException if storage is not connected
+	 */
 	public abstract boolean copyFile(String filePath, String dest) throws NotFound, StorageConnectionException; // copy
 	
+	
+	/**
+	 * Writes data to the file
+	 * 
+	 * @param filePath is the path to the file or directory to be copied
+	 * @param text is the data to be written
+	 * @param append if true appends to the existing data in the file, otherwise writes data at the beginning of the file
+	 *
+	 * @return true if data is successfully written in the file, false otherwise
+	 * 
+	 * @throws NotFound if the file to be written in does not exist
+	 * @throws StorageSizeException if there is no anymore free space in the storage
+	 * @throws StorageConnectionException if storage is not connected
+	 * @throws OperationNotAllowed if given path does not represent the file
+	 */
 	public abstract boolean writeToFile(String filePath, String text, boolean append) throws NotFound, StorageSizeException, StorageConnectionException, OperationNotAllowed; //write
 	
+	
+	/**
+	 * Checks storage existance along the path
+	 * 
+	 * @param path is the path to be checked
+	 *
+	 * @return true if storage exist along the path, false otherwise
+	 * 
+	 * @throws PathException if the path is incorrect
+	 */
 	protected abstract boolean checkStorageExistence(String path) throws PathException;
 	
+	
+	/**
+	 * Saves the object to the JSON file
+	 * 
+	 * @param obj is the object to be saved
+	 */
 	protected abstract void saveToJSON(Object obj);
 	
+	
+	/**
+	 * Reads the object from the JSON file
+	 * 
+	 * @param obj is the object to be read
+	 * @param path is the path to JSON file to be read from
+	 */
 	protected abstract void readFromJSON(Object obj, String path);
 	
+	
+	/**
+	 * Changes current directory to the specified one
+	 * 
+	 * @param dest is the path to the directory to be changed in
+	 *
+	 * @return true if the directory is successfully changed, false otherwise
+	 * 
+	 * @throws NotFound if the directory does not exist
+	 * @throws StorageConnectionException if storage is not connected
+	 */
 	public boolean changeDirectory(String dest) throws NotFound, StorageConnectionException { // cd
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
@@ -122,6 +311,15 @@ public abstract class Storage {
 	}
 	
 	
+	/**
+	 * Checks whether the file or directory exist
+	 * 
+	 * @param src is the path to the potential file or directory
+	 *
+	 * @return true if the file or directory exist, false otherwise
+	 * 
+	 * @throws StorageConnectionException if storage is not connected
+	 */
 	public boolean find(String src) throws StorageConnectionException { // hit
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
@@ -130,7 +328,15 @@ public abstract class Storage {
 		return checkPath(getRelativePath(src), StorageManager.getInstance().getStorageInformation().getStorageTreeStructure());
 	}
 	
-	
+	/**
+	 * Checks whether the files or directories exists
+	 * 
+	 * @param filePaths are the paths to the potential files or directories
+	 * 
+	 * @return for every path returns true if the file or directory exist, false otherwise
+	 * 
+	 * @throws StorageConnectionException if storage is not connected
+	 */
 	public Map<String, Boolean> find(List<String> filePaths) throws StorageConnectionException { // hit -l
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
@@ -143,7 +349,15 @@ public abstract class Storage {
 		return result;
 	}
 	
+	/**
+	 * Tries to find all destionatios for the file or directory with a specified name
+	 * 
+	 * @param name is the name to be searched for
 	
+	 * @return list of all destinations which contains specified name
+	 * 
+	 * @throws StorageConnectionException if storage is not connected
+	 */
 	public List<String> findDestinantions(String name) throws StorageConnectionException { // dest
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
@@ -167,6 +381,23 @@ public abstract class Storage {
 		return result;
 	}
 	
+	/**
+	 * Lists all items from the directory that meet the requirements
+	 * 
+	 * @param src is the path to the directory
+	 * @param onlyDirs if true searches only for directories
+	 * @param onlyFiles if true searches only for files
+	 * @param searchSubDirecories if true search continues to the subdirectories
+	 * @param extension if not null searches only for the items that have given extension
+	 * @param prefix if not null searches only for the items that have given prefix
+	 * @param sufix if not null searches only for the items that have given sufix
+	 * @param subWord if not null searches only for the items that have given subWord
+	 
+	 * @return returns the map where keys represent the relative paths of directories and values are all items which are found in the directory respectively
+	 * 
+	 * @throws NotFound if the directory does not exist
+	 * @throws StorageConnectionException if storage is not connected
+	 */
 	public Map<String, List<FileMetadata>> listDirectory(String src, boolean onlyDirs, boolean onlyFiles, boolean searchSubDirecories, 
 				String extension, String prefix, String sufix, String subWord) throws NotFound, StorageConnectionException { // ls
 		
@@ -243,8 +474,21 @@ public abstract class Storage {
 		return result;
 	}
 	
-	
-	public Map<String, List<FileMetadata>> resultSort(Map<String, List<FileMetadata>> result, boolean byName, boolean byCreationDate, 
+	/**
+	 * Sorts result by the given requirements. If some of the requirements are set to true then that requirements is considered in the sorting process 
+	 * 
+	 * @param data is the data upon which the sort is applied
+	 * @param byName
+	 * @param byCreationDate
+	 * @param byModificationDate
+	 * @param ascending
+	 * @param descending
+	 *  
+	 * @return returns the map where keys represent the relative paths of directories and values are sorted items in the directory respectively
+	 * 
+	 * @throws StorageConnectionException if storage is not connected
+	 */
+	public Map<String, List<FileMetadata>> resultSort(Map<String, List<FileMetadata>> data, boolean byName, boolean byCreationDate, 
 			boolean byModificationDate, boolean ascending, boolean descending) throws StorageConnectionException{ // sort
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
@@ -274,23 +518,45 @@ public abstract class Storage {
 			comparator = Comparator.comparing(FileMetadata::getTimeModified);
 		
 		
-		for(String relativePath : result.keySet()) {
-			List<FileMetadata> list = result.get(relativePath);
+		for(String relativePath : data.keySet()) {
+			List<FileMetadata> list = data.get(relativePath);
 			if(descending) {
 				list = list.stream().sorted(comparator).collect(Collectors.toList());
 				Collections.reverse(list);
-				result.put(relativePath, list);
+				data.put(relativePath, list);
 			}
 			else 
-				result.put(relativePath, list.stream().sorted(comparator).collect(Collectors.toList()));
+				data.put(relativePath, list.stream().sorted(comparator).collect(Collectors.toList()));
 		}
 		
-		return result;
+		return data;
 	}
 	
-	// atributes inicilalizovati na false ( Arrays.fill(atributes, Boolean.FALSE) )
-	
-	public Map<String, List<FileMetadata>> resultFilter(Map<String, List<FileMetadata>> result, boolean[] atributes, Date[][] periods) 
+	/**
+	 * Filters attributes of the data.  
+	 * 
+	 * @param data is the data upon which filter is applied
+	 * 
+	 * @param atributes : 
+	 * 			if atributes[0] is set to true then file ID is included
+	 *		    if atributes[1] is set to true then file name is included
+	 *		    if atributes[2] is set to true then file relative path is included
+	 *			if atributes[3] is set to true then file absolute path is included
+	 *		    if atributes[4] is set to true then time of creation is included
+	 *		    if atributes[5] is set to true then time of modifivation is included
+	 *		    if atributes[6] is set to true then whether file is file is included
+	 *		    if atributes[7] is set to true then whether file is directory is included
+	 * 
+	 * @param periods:
+	 *			if periods[0][0] and periods[0][1] are set the then only files which are created between those two periods are included
+	 *			if periods[1][0] and periods[1][1] are set the then only files which are modified between those two periods are included
+	 *
+	 * @return returns the map where keys represent the relative paths of directories and values are all items with a filtered attributes
+	 * 
+	 * @throws InvalidArgumentsExcpetion if some of periods are not valid
+	 * @throws StorageConnectionException if storage is not connected
+	 */
+	public Map<String, List<FileMetadata>> filterAttributes(Map<String, List<FileMetadata>> data, boolean[] atributes, Date[][] periods) 
 			throws InvalidArgumentsExcpetion, StorageConnectionException{ // filter
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
@@ -314,23 +580,15 @@ public abstract class Storage {
 			
 			if(modifedTimeLowerBound.after(modifiedTimeUpperBound))
 				throw new InvalidArgumentsExcpetion("Invalid arguments! modifedTimeLowerBound > modifiedTimeUpperBound");
-		}
-		// atributes[0] = "fileID"
-		// atributes[1] = "name"
-		// atributes[2] = "absolutePath"
-		// atributes[3] = "timeCreated"
-		// atributes[4] = "fimeModified"
-		// atributes[5] = "isFile"
-		// atributes[6] = "isDirectory"
-		
+		}		
 		
 		Map<String, List<FileMetadata>> resultClone = new HashMap<>();
 		
-		for(String relativePath : result.keySet()) {
+		for(String relativePath : data.keySet()) {
 			
 			List<FileMetadata> filtered = new ArrayList<>();
 			
-			for(FileMetadata f : result.get(relativePath)) {
+			for(FileMetadata f : data.get(relativePath)) {
 				
 				if(createdTimeLowerBound != null && createdTimeUpperBound != null) {
 					Date time = f.getTimeCreated();
@@ -371,6 +629,11 @@ public abstract class Storage {
 		return resultClone;
 	}
 	
+	/**
+	 * Sets the storage configuration
+	 * @param size is the maximum number of bytes which storage can hold
+	 * @param unsupportedFiles are extensions which storage does not support
+	 */
 	public void setStorageConfiguration(Long size, Set<String> unsupportedFiles) {
 		StorageManager.getInstance().getStorageInformation().setStorageSize(size);
 		StorageManager.getInstance().getStorageInformation().setUnsupportedFiles(unsupportedFiles);
@@ -438,8 +701,8 @@ public abstract class Storage {
 	// kada se poziva iz drive implementacije, fileMetadata treba da ima podesen fileID !!!!!!
 	// ako postoji numOfFilesLimit za direktorijum onda se u obe implementacije treba podestiti pre nego sto se posalje u specifikaciju
 	// atribute isDirectory i isFile takodje treba da budu podeseni pre prosledjivanja
-	protected boolean addFileMetadataToStorage(String dest, FileMetadata fileMetadata, Integer... filesLimit) 
-			throws NotFound, NamingPolicyException, StorageSizeException, DirectoryException, UnsupportedFileException, OperationNotAllowed {
+	protected String addFileMetadataToStorage(String dest, FileMetadata fileMetadata, Integer... filesLimit) 
+			throws NotFound, StorageSizeException, DirectoryException, UnsupportedFileException, OperationNotAllowed {
 		
 		String name = Paths.get(dest).getFileName().toString();
 		dest = Paths.get(dest).getParent().toString(); // parent path
@@ -474,11 +737,22 @@ public abstract class Storage {
 			parent.setNumOfFilesLimit(parent.getNumOfFilesLimit() - 1);
 		}
 		
-		for(FileMetadata f : storageTreeStracture.get(parent.getRelativePath())) {
-			if(f.getName().equals(fileMetadata.getName()))
-				throw new NamingPolicyException("File with a such name already exist. Choose a different name!");
+		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kreira
+		String tmp = "";
+		Integer k = 1;
+		List<FileMetadata> list = storageTreeStracture.get(parent.getRelativePath());
+		for(int i = 0 ; i < list.size() ; i++) {
+			
+			FileMetadata f = list.get(i);
+			
+			if(f.getName().equals(name)) {
+				tmp = name + "(" + (k++) + ")";
+				i = 0;
+			}
 		}
 		
+		name = tmp;
+			
 		fileMetadata.setName(name);
 		fileMetadata.setSize(0L);
 		fileMetadata.setAbsolutePath(parent.getAbsolutePath() + File.separator + name);
@@ -497,7 +771,7 @@ public abstract class Storage {
 		}
 		
 		storageTreeStracture.get(parent.getRelativePath()).add(fileMetadata);		
-		return true;
+		return fileMetadata.getAbsolutePath();
 	}
 	
 	protected boolean removeFileMetadataFromStorage(String dest) throws NotFound {
@@ -582,7 +856,7 @@ public abstract class Storage {
 			
 			FileMetadata f = list.get(i);
 			
-			if(f.getName().startsWith(newName) && f.getName().endsWith(newName)) {
+			if(f.getName().equals(newName)) {
 				tmp = newName + "(" + (k++) + ")";
 				i = 0;
 			}
