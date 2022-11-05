@@ -310,28 +310,19 @@ public class LocalStorageImplementation extends Storage {
 	}
 	
 	@Override
-	public boolean writeToFile(String src, String text, boolean append) throws NotFound, StorageConnectionException, StorageSizeException {
+	public boolean writeToFile(String filePath, String text, boolean append) throws NotFound, StorageConnectionException, StorageSizeException, OperationNotAllowed {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
-
-		File file = new File(getAbsolutePath(src).toString());
-		if(!file.exists() || !file.isFile())
-			throw new NotFound("File not found");
 		
-		Long size = text.length() + ((append == true) ? file.length() : 0L);
-		
-		Long storageSize = StorageManager.getInstance().getStorageInformation().getStorageSize();
-		if(storageSize != null) {
-			if(storageSize - size < 0)
-				throw new StorageSizeException("Storage size limit has been reached!");
-			
-			StorageManager.getInstance().getStorageInformation().setStorageSize(storageSize - size);;
+		try {
+			writeToFileMetadata(getAbsolutePath(filePath).toString(), text, append);
+		} catch (NotFound | OperationNotAllowed | StorageSizeException e) {			
+			e.printStackTrace();
+			return false;
 		}
 		
-		writeToFileMetadata(getAbsolutePath(src).toString(), text, append); // TREBA DA SE IMPLEMENTIRA
-		
-		try (FileWriter fileOut = new FileWriter(src, append)) {
+		try (FileWriter fileOut = new FileWriter(filePath, append)) {
 	           
 			fileOut.write(text);
 	    
@@ -349,7 +340,8 @@ public class LocalStorageImplementation extends Storage {
 		String userDirectoryPath = FileUtils.getUserDirectoryPath();
 		if(!dest.startsWith(userDirectoryPath))
 			throw new PathException(String.format("Storage must reside in the User's directory! Make sure that storage path starts with '%s'", userDirectoryPath));
-				
+		
+		//												   		   |-------->
 		// ne radimo proveru za C:\Users\Luka, vec za C:\Users\Luka\...\...\...
 		Path path = Paths.get(dest.substring(userDirectoryPath.length()));
 		Path currPath = Paths.get(userDirectoryPath);	
