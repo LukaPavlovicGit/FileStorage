@@ -25,10 +25,12 @@ import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.Drive.Files.Export;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
@@ -240,6 +242,7 @@ public class GoogleDriveStorage extends Storage {
 			
 		}catch (IOException e) {
 			e.printStackTrace();
+			return false;
 		}
 		
 		return true;
@@ -273,10 +276,11 @@ public class GoogleDriveStorage extends Storage {
 			File parent = getLastFileOnPath(parentPath, StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());			
 			file.setParents(Collections.singletonList(parent.getId()));
 			
-			service.files().create(file).setFields("id").execute();
+			service.files().create(file).setFields("id").execute();			
 			
 		}catch (IOException e) {
 			e.printStackTrace();
+			return false;
 		}
 		
 		return true;
@@ -562,9 +566,45 @@ public class GoogleDriveStorage extends Storage {
 	}
 
 	@Override
-	public boolean writeToFile(String filePath, String text, boolean append)
-			throws NotFound, StorageSizeException, StorageConnectionException {
-
+	public boolean writeToFile(String filePath, String text, boolean append) throws NotFound, StorageSizeException, StorageConnectionException, OperationNotAllowed {
+		
+		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
+			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
+		
+		try {
+			writeToFileMetadata(getAbsolutePath(filePath).toString(), text, append);
+		} catch (NotFound | OperationNotAllowed | StorageSizeException e) {			
+			e.printStackTrace();
+			return false;
+		}
+		
+		File file = getLastFileOnPath(getAbsolutePath(filePath), StorageManager.getInstance().getStorageInformation().getStorageDirectoryID());		
+		try {
+			Export export = service.files().export(file.getId(), "text/plain");
+			InputStream in = export.executeMediaAsInputStream();
+			InputStreamReader inr = new InputStreamReader(in);
+	        BufferedReader reader = new BufferedReader(inr);
+	        
+	        StringBuilder sb = new StringBuilder();
+	        String line = null;
+	        
+	        while((line = reader.readLine()) != null) 
+	        	sb.append(line);
+	 
+	        java.io.File fileContent = new java.io.File(file.getName());
+	        FileWriter fw = new FileWriter(fileContent, append);
+	        fw.write(String.valueOf(sb));
+	        fw.close();
+            reader.close();
+            
+            FileContent mediaContent = new FileContent(file.getMimeType(), fileContent);
+            File newContent = new File();
+            service.files().update(file.getId(), newContent, mediaContent).execute();
+	        
+		} catch (IOException e) {			
+			e.printStackTrace();
+			return false;
+		}
 		
 		return true;
 	}
