@@ -1,7 +1,5 @@
 package storageInformation;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,20 +10,21 @@ import java.util.Set;
 
 import fileMetadata.FileMetadata;
 
+/**
+ * Holds all necessery information about the storage
+ * 
+ * @author Luka Pavlovic
+ *
+ */
+
 public class StorageInformation {
 	
-	public static final String downloadFileName = "downloads";
 	public static final String datarootDirName = "dataRootDirectory";
-	public static final String configJSONFileName = "configuration.json";
 	public static final String storageInformationJSONFileName = "storageInformation.json";
 	
 	private boolean storageConnected = false;
 	
 	private Map<String, List<FileMetadata>> storageTreeStructure = new HashMap<String, List<FileMetadata>>();
-	// za potrebe serijalizacije i deserijalizacije storageTreeStructure strukture !!!!
-	private List<FileMetadata> keys = new ArrayList<>();
-	private Map<Integer, List<FileMetadata>> map = new HashMap<>();
-	// ================================================================================
 	
 	// configuration
 	private Long storageSize = 1024L; // 1KB
@@ -59,18 +58,6 @@ public class StorageInformation {
 	}
 	public void setStorageTreeStructure(Map<String, List<FileMetadata>> storageTreeStructure) {
 		this.storageTreeStructure = storageTreeStructure;
-	}
-	public List<FileMetadata> getKeys() {
-		return keys;
-	}
-	public void setKeys(List<FileMetadata> keys) {
-		this.keys = keys;
-	}
-	public Map<Integer, List<FileMetadata>> getMap() {
-		return map;
-	}
-	public void setMap(Map<Integer, List<FileMetadata>> map) {
-		this.map = map;
 	}
 	public Long getStorageSize() {
 		return storageSize;
@@ -171,8 +158,6 @@ public class StorageInformation {
 				+ (storageTreeStructure != null
 						? "storageTreeStructure=" + toString(storageTreeStructure.entrySet(), maxLen) + ", "
 						: "")
-				+ (keys != null ? "keys=" + toString(keys, maxLen) + ", " : "")
-				+ (map != null ? "map=" + toString(map.entrySet(), maxLen) + ", " : "")
 				+ (storageSize != null ? "storageSize=" + storageSize + ", " : "")
 				+ (unsupportedFiles != null ? "unsupportedFiles=" + toString(unsupportedFiles, maxLen) + ", " : "")
 				+ (dirNumberOfFilesLimit != null

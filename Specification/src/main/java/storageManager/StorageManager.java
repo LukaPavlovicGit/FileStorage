@@ -1,6 +1,5 @@
 package storageManager;
 
-import configuration.StorageConfiguration;
 import specification.Storage;
 import storageInformation.StorageInformation;
 
@@ -8,7 +7,6 @@ public class StorageManager {
 	
 	private static StorageManager instance = null;
 	private static Storage storage = null;
-	private StorageConfiguration storageConfiguration;
 	private StorageInformation storageInformation;
 	
 	
@@ -17,7 +15,6 @@ public class StorageManager {
     }
     
 	private StorageManager() {
-		this.storageConfiguration = new StorageConfiguration();
 		this.storageInformation = new StorageInformation();
 	}
 	
@@ -39,13 +36,6 @@ public class StorageManager {
 
 	public static void setStorage(Storage storage) {
 		StorageManager.storage = storage;
-	}
-
-	public StorageConfiguration getStorageConfiguration() {
-		return storageConfiguration;
-	}
-	public void setStorageConfiguration(StorageConfiguration storageConfiguration) {
-		this.storageConfiguration = storageConfiguration;
 	}
 	public StorageInformation getStorageInformation() {
 		return storageInformation;
