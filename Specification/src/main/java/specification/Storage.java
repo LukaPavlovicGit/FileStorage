@@ -538,18 +538,18 @@ public abstract class Storage {
 	 * @param data is the data upon which filter is applied
 	 * 
 	 * @param atributes : 
-	 * 			if atributes[0] is set to true then file ID is included
-	 *		    if atributes[1] is set to true then file name is included
-	 *		    if atributes[2] is set to true then file relative path is included
-	 *			if atributes[3] is set to true then file absolute path is included
-	 *		    if atributes[4] is set to true then time of creation is included
-	 *		    if atributes[5] is set to true then time of modifivation is included
-	 *		    if atributes[6] is set to true then whether file is file is included
-	 *		    if atributes[7] is set to true then whether file is directory is included
+	 * if atributes[0] is set to true then file ID is included
+	 * if atributes[1] is set to true then file name is included
+	 * if atributes[2] is set to true then file relative path is included
+	 * if atributes[3] is set to true then file absolute path is included
+	 * if atributes[4] is set to true then time of creation is included
+	 * if atributes[5] is set to true then time of modifivation is included
+	 * if atributes[6] is set to true then whether file is file is included
+	 * if atributes[7] is set to true then whether file is directory is included
 	 * 
 	 * @param periods:
-	 *			if periods[0][0] and periods[0][1] are set the then only files which are created between those two periods are included
-	 *			if periods[1][0] and periods[1][1] are set the then only files which are modified between those two periods are included
+	 * if periods[0][0] and periods[0][1] are set the then only files which are created between those two periods are included
+	 * if periods[1][0] and periods[1][1] are set the then only files which are modified between those two periods are included
 	 *
 	 * @return returns the map where keys represent the relative paths of directories and values are all items with a filtered attributes
 	 * 
@@ -639,6 +639,11 @@ public abstract class Storage {
 		StorageManager.getInstance().getStorageInformation().setUnsupportedFiles(unsupportedFiles);
 	}
 	
+	/**
+	 * 
+	 * @param dest
+	 * @return
+	 */
 	protected boolean createStorageTreeStructure(String dest) {
 		
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
