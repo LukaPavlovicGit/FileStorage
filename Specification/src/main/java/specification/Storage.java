@@ -91,7 +91,7 @@ public abstract class Storage {
 	
 	public abstract boolean copyFile(String filePath, String dest) throws NotFound, StorageConnectionException; // copy
 	
-	public abstract boolean writeToFile(String filePath, String text, boolean append) throws NotFound, StorageSizeException, StorageConnectionException; //write
+	public abstract boolean writeToFile(String filePath, String text, boolean append) throws NotFound, StorageSizeException, StorageConnectionException, OperationNotAllowed; //write
 	
 	protected abstract boolean checkStorageExistence(String path) throws PathException;
 	
@@ -416,7 +416,6 @@ public abstract class Storage {
 			.withTimeCreated(new Date())
 			.withTimeModified(new Date())
 			.withIsFile(true)
-			.withIsStrorageTreeStructureJSONFile(true)
 			.build();
 
 		
@@ -576,16 +575,20 @@ public abstract class Storage {
 			throw new NotFound("File path not correct!");
 
 		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se premesta
+		String tmp = "";
+		Integer k = 1;
 		List<FileMetadata> list = storageTreeStracture.get(file.getParent().getRelativePath());
 		for(int i = 0 ; i < list.size() ; i++) {
 			
 			FileMetadata f = list.get(i);
 			
 			if(f.getName().startsWith(newName) && f.getName().endsWith(newName)) {
-				newName += "*";
+				tmp = newName + "(" + (k++) + ")";
 				i = 0;
 			}
 		}
+		
+		newName = tmp;
 		
 		if(file.isDirectory()) 
 			pathFix(file.getRelativePath(), file.getParent().getRelativePath() + File.separator + newName, storageTreeStracture);	
@@ -599,6 +602,7 @@ public abstract class Storage {
 		return newName;
 	}
 	
+	// mozda je ovde pozeljnije da se odradi BFS...???
 	private void pathFix(String oldKey, String newKey, Map<String, List<FileMetadata>> storageTreeStracture) {
 		
 		List<FileMetadata> list = storageTreeStracture.get(oldKey);
@@ -610,7 +614,7 @@ public abstract class Storage {
 			if(f.isDirectory()) 
 				pathFix(f.getRelativePath(), newKey + File.separator + f.getName(), storageTreeStracture);
 
-			// newKey je relativna path
+			// newKey je relativna putanja
 			f.setAbsolutePath(newKey + File.separator + f.getName());
 			f.setRelativePath(newKey + File.separator + f.getName());
 		}
@@ -649,14 +653,14 @@ public abstract class Storage {
 		
 		FileMetadata srcFileClone = srcFile.clone();		
 		List<FileMetadata> list = storageTreeStracture.get(destDir.getRelativePath());
-		
+		Integer k = 1;
 		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kopira		
 		for(int i=0 ; i < list.size() ; i++) {
 			
 			FileMetadata f = list.get(i);
 			
 			if(f.getName().startsWith(srcFileClone.getName()) && f.getName().endsWith(srcFileClone.getName())) {
-				srcFileClone.setName(srcFileClone.getName() + "*");								
+				srcFileClone.setName(f.getName() + "(" + (k++) + ")");								
 				i = 0;
 			}
 		}
@@ -705,8 +709,25 @@ public abstract class Storage {
 		}		
 	}
 	
-	protected boolean writeToFileMetadata(String filePath, String text, boolean append) {
+	protected boolean writeToFileMetadata(String filePath, String text, boolean append) throws NotFound, OperationNotAllowed, StorageSizeException {
 
+		FileMetadata file = getLastFileMetadataOnPath(getRelativePath(filePath), StorageManager.getInstance().getStorageInformation().getStorageTreeStructure());
+		if(file == null)
+			throw new NotFound("File path not correct!");
+		if(file.isDirectory())
+			throw new OperationNotAllowed("Writing not possible! Given path represents directory.");
+		
+		Long size = text.length() + ((append == true) ? file.getSize() : 0L);
+		
+		Long storageSize = StorageManager.getInstance().getStorageInformation().getStorageSize();
+		if(storageSize != null) {
+			if(storageSize - size < 0)
+				throw new StorageSizeException("Storage size limit has been reached!");
+			
+			StorageManager.getInstance().getStorageInformation().setStorageSize(storageSize - size);
+		}
+		
+		file.setSize(size);
 		
 		return true;
 	}
