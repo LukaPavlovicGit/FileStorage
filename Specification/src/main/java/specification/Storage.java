@@ -188,8 +188,9 @@ public abstract class Storage {
 	 * @throws NotFound if the file or directory to be downloaded does not exist
 	 * @throws StorageConnectionException if storage is not connected
 	 * @throws PathException if destination path is incorrect
+	 * @throws OperationNotAllowed if the destination is located in the storage
 	 */
-	public abstract boolean download(String filePath, String downloadDest) throws NotFound, StorageConnectionException, PathException; // download
+	public abstract boolean download(String filePath, String downloadDest) throws NotFound, StorageConnectionException, PathException, OperationNotAllowed; // download
 	
 	
 	/**
