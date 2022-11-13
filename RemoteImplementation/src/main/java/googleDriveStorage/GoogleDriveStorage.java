@@ -221,7 +221,7 @@ public class GoogleDriveStorage extends Storage {
 		try {			
 			fileMetadata = new FileMetadata();
 			fileMetadata.setDirectory(true);
-			fileMetadata.setNumOfFilesLimit( (filesLimit.length > 0) ? filesLimit[0] : null );
+			fileMetadata.setNumOfFilesLimit( ((filesLimit.length>0) ? ((filesLimit[0]!=null) ? filesLimit[0] : null) : null) );
 			dest = addFileMetadataToStorage(dest, fileMetadata); 
 			
 		} catch (NotFound | StorageSizeException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
@@ -414,7 +414,7 @@ public class GoogleDriveStorage extends Storage {
 	}
 
 	@Override
-	public boolean download(String filePath, String downloadDest) throws NotFound, StorageConnectionException, PathException {
+	public boolean download(String filePath, String downloadDest) throws NotFound, StorageConnectionException, PathException {  
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected())
 			throw new StorageConnectionException("Disconnect from the current storage in order to create the new  one storage!");
@@ -489,7 +489,7 @@ public class GoogleDriveStorage extends Storage {
 		
 		return true;
 	}
-
+	
 	@Override // obezbediti i funcionalnist i ako destinacija ne postoji
 	public boolean copyFile(String src, String dest) throws NotFound, StorageConnectionException {
 		

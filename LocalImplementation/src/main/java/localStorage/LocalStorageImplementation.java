@@ -139,7 +139,7 @@ public class LocalStorageImplementation extends Storage {
 		try {
 			FileMetadata fileMetadata = new FileMetadata();
 			fileMetadata.setDirectory(true);
-			fileMetadata.setNumOfFilesLimit( filesLimit.length>0 ? filesLimit[0] : null );
+			fileMetadata.setNumOfFilesLimit( ((filesLimit.length>0) ? ((filesLimit[0]!=null) ? filesLimit[0] : null) : null) );
 			dest = addFileMetadataToStorage(dest, fileMetadata, filesLimit);
 
 		} catch (NotFound | StorageSizeException | DirectoryException | UnsupportedFileException | OperationNotAllowed e) {
@@ -262,14 +262,21 @@ public class LocalStorageImplementation extends Storage {
 	}
 
 	@Override
-	public boolean download(String src, String dest) throws StorageConnectionException {
+	public boolean download(String src, String dest) throws StorageConnectionException, OperationNotAllowed {
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
+		
+		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
+		Path dataRootAbsolutePath = getAbsolutePath(storageInformation.getDatarootDirectory().getAbsolutePath());
+		Path dataRootRelativePath = getRelativePath(storageInformation.getDatarootDirectory().getRelativePath());
 
 		Path srcPath = getAbsolutePath(src);
-		Path destPath = getAbsolutePath(dest);		
+		Path destPath = getAbsolutePath(dest);
 		
+		if(destPath.toString().startsWith(dataRootAbsolutePath.toString()) || destPath.toString().startsWith(dataRootRelativePath.toString()))
+			throw new OperationNotAllowed("Destination folder must be outside of the storage!");
+	
 		try {
 			FileUtils.copyToDirectory(new File(srcPath.toString()), new File(destPath.toString()));
 			

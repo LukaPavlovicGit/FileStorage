@@ -1,5 +1,5 @@
 package specification;
-import java.io.File; 
+import java.io.File;  
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -347,8 +347,8 @@ public abstract class Storage {
 	 * @throws NotFound if the directory does not exist
 	 * @throws StorageConnectionException if storage is not connected
 	 */
-	public Map<String, List<FileMetadata>> listDirectory(String src, boolean onlyDirs, boolean onlyFiles, boolean searchSubDirecories, 
-				String extension, String prefix, String sufix, String subWord) throws NotFound, StorageConnectionException { // ls
+	public List<Map<String, List<FileMetadata>>> listDirectory(String src, boolean onlyDirs, boolean onlyFiles, boolean searchSubDirecories, 
+				String extension, String prefix, String sufix, String subWord) throws NotFound, OperationNotAllowed, StorageConnectionException { // ls
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
@@ -359,6 +359,8 @@ public abstract class Storage {
 		FileMetadata directory = getLastFileMetadataOnPath(getRelativePath(src), storageTreeStracture);
 		if(directory == null)
 			throw new NotFound("Source directory not found!");
+		if(!directory.isDirectory())
+			throw new OperationNotAllowed("Given path does not represent directory!");
 		
 		// fix parameters
 		if(onlyDirs)
@@ -370,54 +372,80 @@ public abstract class Storage {
 		if(sufix != null && sufix.length()>0)
 			subWord = null;
 		
-		Map<String, List<FileMetadata>> result = new HashMap<>();
-		Queue<String> pq = new LinkedList<>();
-		pq.add(directory.getRelativePath());
+		
+		List<Map<String, List<FileMetadata>>> result = new ArrayList<Map<String, List<FileMetadata>>>();
+		Queue<String> pathQueue = new LinkedList<>();
+		Queue<Integer> depthQueue = new LinkedList<>();
+		pathQueue.add(directory.getRelativePath());
+		depthQueue.add(0);
+		
+		result.add(new HashMap<>());
 		
 		// BFS
-		while(!pq.isEmpty()) {
+		while(!pathQueue.isEmpty()) {
 			
-			String relativePath = pq.poll();
-			result.put(relativePath, storageTreeStracture.get(relativePath));
+			String relativePath = pathQueue.poll();
+			Integer depth = depthQueue.poll();
+			
+			Map<String, List<FileMetadata>> map = result.get(depth);			
+			map.put(relativePath, storageTreeStracture.get(relativePath));
 			
 			if(searchSubDirecories==false)
 				break;
 			
+			boolean flag = false;
+			
 			for(FileMetadata f : storageTreeStracture.get(relativePath)) {
-				if(f.isDirectory())
-					pq.add(f.getRelativePath());
+				if(f.isDirectory()) {
+					pathQueue.add(f.getRelativePath());
+					depthQueue.add(depth + 1);
+					
+					if(!flag) {
+						flag = true;
+						result.add(new HashMap<>());
+					}
+				}
 			}
 		}
 		
 		if(onlyDirs || onlyFiles || (extension != null) || (prefix != null) || (sufix != null) || (subWord != null) ) {
 			
-			for(String key : result.keySet()) {
+			
+			
+			for(int depth = 0 ; depth < result.size() ; depth++) {
 				
-				List<FileMetadata> tmp = new ArrayList<>();
+				Map<String, List<FileMetadata>> map =  result.get(depth);
 				
-				for(FileMetadata f : result.get(key)) {
+				for(String key : map.keySet()) {
+				
+					List<FileMetadata> tmp = new ArrayList<>();
 					
-					if(onlyDirs && !f.isDirectory())
-						continue;
-					if(onlyFiles && !f.isFile())
-						continue;
-					if(extension != null && !f.getName().endsWith(extension))
-						continue;
-					if(prefix != null && !f.getName().startsWith(prefix))
-						continue;
-					if(sufix != null && !f.getName().endsWith(sufix))
-						continue;
-					if(subWord != null && !f.getName().contains(subWord))
-						continue;
+						for(FileMetadata f : map.get(key)) {
+							
+							if(onlyDirs && !f.isDirectory())
+								continue;
+							if(onlyFiles && !f.isFile())
+								continue;
+							if(extension != null && !f.getName().endsWith(extension))
+								continue;
+							if(prefix != null && !f.getName().startsWith(prefix))
+								continue;
+							if(sufix != null && !f.getName().endsWith(sufix))
+								continue;
+							if(subWord != null && !f.getName().contains(subWord))
+								continue;
+							
+							tmp.add(f);
+						}
 					
-					tmp.add(f);
+					map.put(key, tmp);
+			
 				}
-				
-				result.put(key, tmp);
 				
 				if(searchSubDirecories==false)
 					break;
-			}	
+				
+			}
 		}
 		
 		return result;
@@ -434,7 +462,7 @@ public abstract class Storage {
 	 * @return returns the map where keys represent the relative paths of directories and values are sorted items in the directory respectively
 	 * @throws StorageConnectionException if storage is not connected
 	 */
-	public Map<String, List<FileMetadata>> resultSort(Map<String, List<FileMetadata>> data, boolean byName, boolean byCreationDate, 
+	public List<Map<String, List<FileMetadata>>> resultSort(List<Map<String, List<FileMetadata>>> data, boolean byName, boolean byCreationDate, 
 			boolean byModificationDate, boolean ascending, boolean descending) throws StorageConnectionException{ // sort
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
@@ -464,17 +492,22 @@ public abstract class Storage {
 			comparator = Comparator.comparing(FileMetadata::getTimeModified);
 		
 		
-		for(String relativePath : data.keySet()) {
-			List<FileMetadata> list = data.get(relativePath);
-			if(descending) {
-				list = list.stream().sorted(comparator).collect(Collectors.toList());
-				Collections.reverse(list);
-				data.put(relativePath, list);
+		for(int i = 0 ; i < data.size() ; i++) {
+			
+			Map<String, List<FileMetadata>> map = data.get(i);
+			
+			for(String relativePath : map.keySet()) {
+				List<FileMetadata> list = map.get(relativePath);
+				if(descending) {
+					list = list.stream().sorted(comparator).collect(Collectors.toList());
+					Collections.reverse(list);
+					map.put(relativePath, list);
+				}
+				else 
+					map.put(relativePath, list.stream().sorted(comparator).collect(Collectors.toList()));
 			}
-			else 
-				data.put(relativePath, list.stream().sorted(comparator).collect(Collectors.toList()));
 		}
-		
+	
 		return data;
 	}
 	
@@ -497,7 +530,7 @@ public abstract class Storage {
 	 * @throws InvalidArgumentsExcpetion if some of periods are not valid
 	 * @throws StorageConnectionException if storage is not connected
 	 */
-	public Map<String, List<FileMetadata>> filterAttributes(Map<String, List<FileMetadata>> data, boolean[] atributes, Date[][] periods) 
+	public List<Map<String, List<FileMetadata>>> filterAttributes(List<Map<String, List<FileMetadata>>> data, boolean[] atributes, Date[][] periods) 
 			throws InvalidArgumentsExcpetion, StorageConnectionException{ // filter
 		
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
@@ -523,48 +556,55 @@ public abstract class Storage {
 				throw new InvalidArgumentsExcpetion("Invalid arguments! modifedTimeLowerBound > modifiedTimeUpperBound");
 		}		
 		
-		Map<String, List<FileMetadata>> resultClone = new HashMap<>();
+		List<Map<String, List<FileMetadata>>> resultClone = new ArrayList<>();
 		
-		for(String relativePath : data.keySet()) {
+		for(int depth = 0 ; depth < data.size() ; depth++) {
 			
-			List<FileMetadata> filtered = new ArrayList<>();
+			Map<String, List<FileMetadata>> map = data.get(depth);
 			
-			for(FileMetadata f : data.get(relativePath)) {
+			for(String relativePath : map.keySet()) {
+			
+				List<FileMetadata> filtered = new ArrayList<>();
 				
-				if(createdTimeLowerBound != null && createdTimeUpperBound != null) {
-					Date time = f.getTimeCreated();
-					if(time.before(createdTimeLowerBound) || time.after(createdTimeUpperBound))
-						continue;
+				for(FileMetadata f : map.get(relativePath)) {
+					
+					if(createdTimeLowerBound != null && createdTimeUpperBound != null) {
+						Date time = f.getTimeCreated();
+						if(time.before(createdTimeLowerBound) || time.after(createdTimeUpperBound))
+							continue;
+					}
+					if(modifedTimeLowerBound != null && modifiedTimeUpperBound != null) {
+						Date time = f.getTimeModified();
+						if(time.before(modifedTimeLowerBound) || time.after(modifiedTimeUpperBound))
+							continue;
+					}
+					
+					FileMetadataBuilder builder = new FileMetadataBuilder();
+					
+					if(atributes[0])
+						builder.withFileID(f.getFileID());
+					if(atributes[1])
+						builder.withName(f.getName());
+					if(atributes[2])
+						builder.withRelativePath(f.getRelativePath());
+					if(atributes[3])
+						builder.withAbsolutePath(f.getAbsolutePath());
+					if(atributes[4])
+						builder.withTimeCreated(f.getTimeCreated());
+					if(atributes[5])
+						builder.withTimeModified(f.getTimeModified());
+					if(atributes[6])
+						builder.withIsFile(f.isFile());
+					if(atributes[7])
+						builder.withIsDirectory(f.isDirectory());								
+					
+					filtered.add(builder.build());
 				}
-				if(modifedTimeLowerBound != null && modifiedTimeUpperBound != null) {
-					Date time = f.getTimeModified();
-					if(time.before(modifedTimeLowerBound) || time.after(modifiedTimeUpperBound))
-						continue;
-				}
 				
-				FileMetadataBuilder builder = new FileMetadataBuilder();
-				
-				if(atributes[0])
-					builder.withFileID(f.getFileID());
-				if(atributes[1])
-					builder.withName(f.getName());
-				if(atributes[2])
-					builder.withRelativePath(f.getRelativePath());
-				if(atributes[3])
-					builder.withAbsolutePath(f.getAbsolutePath());
-				if(atributes[4])
-					builder.withTimeCreated(f.getTimeCreated());
-				if(atributes[5])
-					builder.withTimeModified(f.getTimeModified());
-				if(atributes[6])
-					builder.withIsFile(f.isFile());
-				if(atributes[7])
-					builder.withIsDirectory(f.isDirectory());								
-				
-				filtered.add(builder.build());
+				map.put(relativePath, filtered);
 			}
 			
-			resultClone.put(relativePath, filtered);
+			resultClone.add(depth, map);
 		}
 		
 		return resultClone;
@@ -617,7 +657,6 @@ public abstract class Storage {
 			.build();
 	
 		FileMetadata strorageInformationJSONfile = new FileMetadataBuilder()
-			.withFileID(storageInformation.getStorageTreeStructureJSOnID())
 			.withName(StorageInformation.storageInformationJSONFileName)
 			.withAbsolutePath(storage.getAbsolutePath() + File.separator + StorageInformation.storageInformationJSONFileName)
 			.withRelativePath(storage.getRelativePath() + File.separator + StorageInformation.storageInformationJSONFileName)
@@ -694,7 +733,7 @@ public abstract class Storage {
 		}
 		
 		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kreira
-		String tmp = "";
+		String tmp = name;
 		Integer k = 1;
 		List<FileMetadata> list = storageTreeStracture.get(parent.getRelativePath());
 		for(int i = 0 ; i < list.size() ; i++) {
@@ -749,7 +788,9 @@ public abstract class Storage {
 		storageTreeStracture.get(file.getParent().getRelativePath()).remove(file);
 		return true;
 	}
-	
+	// ######################################################################
+	//TREBA DA VRACA NAZIV FAJLA, AKO DODJE DO PROMENE NAZIVA DA SE UPDAJTUJE FAJL !!!!!!!!!!!!!!!!!!!
+	// ######################################################################
 	/**
 	 * Moves FileMetadata to the other destination in the storage tree structure
 	 * @param src is the path to the FileMetada to be moved
@@ -786,12 +827,14 @@ public abstract class Storage {
 		
 		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se premesta
 		List<FileMetadata> list = storageTreeStracture.get(destFile.getRelativePath());
+		String tmp = srcFile.getName();
+		int k = 1;
 		for(int i = 0 ; i < list.size() ; i++) {
 			
 			FileMetadata f = list.get(i);
 			
 			if(f.getName().startsWith(srcFile.getName()) && f.getName().endsWith(srcFile.getName())) {
-				srcFile.setName(srcFile.getName() + "*");
+				srcFile.setName(tmp + (k++));
 				i = 0;
 			}
 		}
@@ -828,7 +871,7 @@ public abstract class Storage {
 			throw new NotFound("File path not correct!");
 
 		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se premesta
-		String tmp = "";
+		String tmp = newName;
 		Integer k = 1;
 		List<FileMetadata> list = storageTreeStracture.get(file.getParent().getRelativePath());
 		for(int i = 0 ; i < list.size() ; i++) {
@@ -872,8 +915,9 @@ public abstract class Storage {
 			f.setRelativePath(newKey + File.separator + f.getName());
 		}
 	}
-	
-	
+	// ######################################################################
+	//TREBA DA VRACA NAZIV FAJLA, AKO DODJE DO PROMENE NAZIVA DA SE UPDAJTUJE FAJL !!!!!!!!!!!!!!!!!!!
+	// ######################################################################
 	/**
 	 * Copies FileMetadata
 	 * @param src is the path to FileMetadata to be copied
@@ -917,13 +961,14 @@ public abstract class Storage {
 		FileMetadata srcFileClone = srcFile.clone();		
 		List<FileMetadata> list = storageTreeStracture.get(destDir.getRelativePath());
 		Integer k = 1;
+		String tmp = srcFileClone.getName();
 		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kopira		
 		for(int i=0 ; i < list.size() ; i++) {
 			
 			FileMetadata f = list.get(i);
 			
 			if(f.getName().startsWith(srcFileClone.getName()) && f.getName().endsWith(srcFileClone.getName())) {
-				srcFileClone.setName(f.getName() + "(" + (k++) + ")");								
+				srcFileClone.setName(tmp + "(" + (k++) + ")");								
 				i = 0;
 			}
 		}
@@ -1020,9 +1065,10 @@ public abstract class Storage {
 									
 			String nextDirName = iterator.next().toString();
 			List<FileMetadata> list = storageTreeStracture.get(parent);
+			
 			if(list==null) {
-				System.out.println("parent:"+parent);
-				System.out.println("path:"+path.toString());
+				System.out.println("###parent:"+parent);
+				System.out.println("###path:"+path.toString());
 			}
 			for(int i=0 ; i<list.size() ; i++) {				
 				FileMetadata f = list.get(i);					
@@ -1101,9 +1147,8 @@ public abstract class Storage {
 					 relativePath je = storage\dataRootDirectory\dir1\dir2
 			*/
 		else if(path.startsWith(dataRootAbsolutePath)){
-			path = path.substring(dataRootAbsolutePath.length());
-			relativePath = Paths.get(storageInformation.getDatarootDirectory().getRelativePath()).resolve(Paths.get(path));
-		
+			path = path.substring(dataRootAbsolutePath.length() + (path.equals(dataRootAbsolutePath) ? 0 : File.separator.length()));
+			relativePath = Paths.get(storageInformation.getDatarootDirectory().getRelativePath()).resolve(path);		
 			 /* npr. ako je:
 							       path = C:\Users\Luka\Desktop\storage\dataRootDirectory\dir1\dir2
 				   dataRootAbsolutePath = C:\Users\Luka\Desktop\storage\dataRootDirectory
@@ -1129,9 +1174,10 @@ public abstract class Storage {
 			
 		if(!path.startsWith(dataRootAbsolutePath) && !path.startsWith(dataRootRelativePath))
 			path = storageInformation.getCurrentDirectory().getAbsolutePath() + File.separator + path;		
-		else if(path.startsWith(dataRootRelativePath)) 
-			path = storageInformation.getDatarootDirectory().getAbsolutePath() + File.separator + path.substring(dataRootRelativePath.length());
-		
+		else if(path.startsWith(dataRootRelativePath)) {
+			path = path.substring(dataRootRelativePath.length() + (path.equals(dataRootRelativePath) ? 0 : File.separator.length()));
+			path = storageInformation.getDatarootDirectory().getAbsolutePath() + File.separator + path;
+		}
 		return Paths.get(path);
 	}
 }

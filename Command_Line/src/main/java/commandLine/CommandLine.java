@@ -4,6 +4,8 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,12 +32,14 @@ public class CommandLine {
 				e.printStackTrace();
 			}
 			Storage storage = StorageManager.getStorage();
-			Map<String, List<FileMetadata>> resultSet = new HashMap<>();
+			List<Map<String, List<FileMetadata>>> resultSet = new ArrayList<>();
 			
 			scanner = new Scanner(System.in);
 	        String command = "";	        	        
+	   	       
+	        System.out.println("Type 'help' when help is needed.\n");
 	        
-	        System.out.println("If you need some instructions, please type command help");
+	        help();
 	        
 	        while(true) {
 	        	
@@ -54,7 +58,7 @@ public class CommandLine {
         				Set<String> unsupportedFiles = null;
             			command = scanner.nextLine();
             			
-            			if(!command.equals("Y")) {
+            			if(command.equals("Y")) {
             				
             				unsupportedFiles = new HashSet<>();
             				boolean correct = true;
@@ -263,11 +267,9 @@ public class CommandLine {
 		            		
 		            		resultSet = storage.listDirectory(src, onlyDirs, onlyFiles, searchSubDirecories, ext, pref, suf, sub);
 	            		}	            		
-	            		for(String relativePath : resultSet.keySet()) {
-	            			System.out.println("->" + relativePath + ":");
-	            			for(FileMetadata ff : resultSet.get(relativePath))
-	            				System.out.println(" " + ff.getName());
-	            		}	           
+	            		
+	            		printResult(resultSet);
+	            		
 	            	}
 	            	else if(commArray.length > 2 && commArray[0].equals("rez") && commArray[1].equals("-sort")) {	          
 	            		if(commArray.length==2){
@@ -289,11 +291,8 @@ public class CommandLine {
 	            			resultSet = storage.resultSort(resultSet, byName, byCreation, byModification, asc, desc);
 	            		}
 	            		
-	            		for(String relativePath : resultSet.keySet()) {
-	            			System.out.println("->" + relativePath + " :");
-	            			for(FileMetadata ff : resultSet.get(relativePath))
-	            				System.out.println(" " + ff.getName());
-	            		}	   
+	            		printResult(resultSet);
+	            		
 	            	}
 	            	else if(commArray.length > 2 && commArray[0].equals("rez") && commArray[1].equals("-fil")) {	          
 	            		String[] subArr = Arrays.copyOfRange(commArray, 2, commArray.length);
@@ -335,13 +334,21 @@ public class CommandLine {
 	            			
 	            		}            		
 	            		
-	            		Map<String, List<FileMetadata>> resultClone = storage.filterAttributes(resultSet, attributes, periods);
+	            		List<Map<String, List<FileMetadata>>> resultClone = storage.filterAttributes(resultSet, attributes, periods);
 	            		
-	            		for(String relativePath : resultClone.keySet()) {
-	            			System.out.println("->" + relativePath + " :");
+	            		for(int depth = 0 ; depth < resultClone.size() ; depth++) {
+	            			Map<String, List<FileMetadata>> map =  resultClone.get(depth);
 	            			
-	            			for(FileMetadata ff : resultClone.get(relativePath))
-	            				System.out.println(ff);
+	                		for(String relativePath : map.keySet()) {
+	                			
+	                			if(map.get(relativePath).isEmpty())
+	                				continue;
+	                			
+	                			System.out.println(relativePath);
+	            				
+	                			for(FileMetadata ff : map.get(relativePath))
+	            					System.out.println("-"+ff.toString());
+	            	    	}   
 	            		}
 	            	}
 	            	else if((commArray.length == 3 || commArray.length == 4) && commArray[0].equals("write")) {	          
@@ -358,6 +365,7 @@ public class CommandLine {
 	            	}
 	   	            	
 	            }catch (Exception e) {
+	            	System.out.println("Type 'help' for more information.");
 	            	e.printStackTrace();          		            
 	            }
 	            	        		        	
@@ -366,31 +374,7 @@ public class CommandLine {
 	            }
 	        	
 	            if (command.equals("help")) {
-					System.out.println("Type '?<command_name>' to see command explanation and it's usage examples.");
-					System.out.println("You can use absolute and relative paths for storage operations. Relative paths are relative to the location of the current directory.");
-					System.out.println("If you use dates make sure you are using this FORMAT: DD-M-YYYY HH:MM:SS, for other formats is not guaranteed that the software will work as expected.");
-					System.out.println();
-					System.out.println("COMMANDS:");
-					System.out.println("mkstrg");
-					System.out.println("con");
-					System.out.println("discon");
-					System.out.println("mkdir");
-					System.out.println("mkdirs");
-					System.out.println("mkfile");
-					System.out.println("mkfiles");
-					System.out.println("move");
-					System.out.println("del");
-					System.out.println("rename");
-					System.out.println("download");
-					System.out.println("copy");
-					System.out.println("write");
-					System.out.println("cd");
-					System.out.println("hit");
-					System.out.println("hit -l");
-					System.out.println("des");
-					System.out.println("ls");
-					System.out.println("rez -sort");
-					System.out.println("rez -fil");//rez -sort				
+					help();	
 		            continue;
 		        }
 		    	
@@ -628,12 +612,54 @@ public class CommandLine {
 		    		System.out.println("2. rez -fil -n -d -ap");
 		    		System.out.println("3. rez -tc-p 28-09-2022 09:30:30|28-10-2022 15:00:00");
 		            continue;
-		        }	        	        	
-	            
-//	            if(StorageManager.getInstance() == null || StorageManager.getInstance().getStorageInformation() == null || StorageManager.getInstance().getStorageInformation().getCurrentDirectory() == null|| StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getRelativePath() == null)
-//	            	continue;
-//	            
-//	            System.out.print(StorageManager.getInstance().getStorageInformation().getCurrentDirectory().getRelativePath() + ">");
+		        }	        	        		        
 	        }
+	       
+	}
+	
+	static void printResult(List<Map<String, List<FileMetadata>>> result) {
+		
+		for(int depth = 0 ; depth < result.size() ; depth++) {
+			Map<String, List<FileMetadata>> map =  result.get(depth);
+			
+    		for(String relativePath : map.keySet()) {
+    			
+    			if(map.get(relativePath).isEmpty())
+    				continue;
+    			
+    			System.out.println(relativePath);
+				
+    			for(FileMetadata ff : map.get(relativePath))
+					System.out.println("  " + ff.getName());
+	    		}   
+		}
+	}
+	
+	static void help() {		
+		System.out.println("Type '?<command_name>' to see command explanation and it's usage examples.");		
+		System.out.println("You can use absolute and relative paths for storage operations. Relative paths are relative to the location of the current directory.");
+		System.out.println("If you use dates make sure you are using this FORMAT: DD-M-YYYY HH:MM:SS, for other formats is not guaranteed that the software will work as expected.");
+		System.out.println();
+		System.out.println("COMMANDS:");
+		System.out.println("mkstrg");
+		System.out.println("con");
+		System.out.println("discon");
+		System.out.println("mkdir");
+		System.out.println("mkdirs");
+		System.out.println("mkfile");
+		System.out.println("mkfiles");
+		System.out.println("move");
+		System.out.println("del");
+		System.out.println("rename");
+		System.out.println("download");
+		System.out.println("copy");
+		System.out.println("write");
+		System.out.println("cd");
+		System.out.println("hit");
+		System.out.println("hit -l");
+		System.out.println("des");
+		System.out.println("ls");
+		System.out.println("rez -sort");
+		System.out.println("rez -fil");//rez -sort	
 	}
 }
