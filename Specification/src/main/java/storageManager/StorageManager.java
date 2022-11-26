@@ -3,6 +3,11 @@ package storageManager;
 import specification.Storage;
 import storageInformation.StorageInformation;
 
+/**
+ * 
+ * @author Luka Pavlovic
+ *
+ */
 public class StorageManager {
 	
 	private static StorageManager instance = null;

@@ -41,10 +41,7 @@ public class StorageInformation {
 	
 	private String storageDirectoryID;
 	private String datarootDirectoryID;
-	private String downloadFileID;
 	private String configJSOnID;
-	private String storageTreeStructureJSOnID;
-	
 	
 	
 	public boolean isStorageConnected() {
@@ -132,24 +129,12 @@ public class StorageInformation {
 	public void setDatarootDirectoryID(String datarootDirectoryID) {
 		this.datarootDirectoryID = datarootDirectoryID;
 	}
-	public String getDownloadFileID() {
-		return downloadFileID;
-	}
-	public void setDownloadFileID(String downloadFileID) {
-		this.downloadFileID = downloadFileID;
-	}
 	public String getConfigJSOnID() {
 		return configJSOnID;
 	}
 	public void setConfigJSOnID(String configJSOnID) {
 		this.configJSOnID = configJSOnID;
 	}
-	public String getStorageTreeStructureJSOnID() {
-		return storageTreeStructureJSOnID;
-	}
-	public void setStorageTreeStructureJSOnID(String storageTreeStructureJSOnID) {
-		this.storageTreeStructureJSOnID = storageTreeStructureJSOnID;
-	}	
 
 	@Override
 	public String toString() {
@@ -173,9 +158,7 @@ public class StorageInformation {
 				+ (currentDirectory != null ? "currentDirectory=" + currentDirectory + ", " : "")
 				+ (storageDirectoryID != null ? "storageDirectoryID=" + storageDirectoryID + ", " : "")
 				+ (datarootDirectoryID != null ? "datarootDirectoryID=" + datarootDirectoryID + ", " : "")
-				+ (downloadFileID != null ? "downloadFileID=" + downloadFileID + ", " : "")
 				+ (configJSOnID != null ? "configJSOnID=" + configJSOnID + ", " : "")
-				+ (storageTreeStructureJSOnID != null ? "storageTreeStructureJSOnID=" + storageTreeStructureJSOnID : "")
 				+ "]";
 	}
 	private String toString(Collection<?> collection, int maxLen) {

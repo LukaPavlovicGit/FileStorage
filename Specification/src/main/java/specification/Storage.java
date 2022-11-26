@@ -689,7 +689,7 @@ public abstract class Storage {
 	 * 		  If the name already exists in the destination folder then the name will be concatenated with a number to make the it unique in the residing directory
 	 * @param fileMetadata is the FileMetadat to be added
 	 * @param filesLimit if FileMetadata is describes directory, then filesLimit is the maximum number of files and directoris that created directory can hold
-	 * @return returns name of the added FileMetadata
+	 * @return returns the absolute path of the added FileMetadata
 	 * @throws NotFound if some directory along the path does not exist
 	 * @throws StorageSizeException if there is no anymore free space in the storage
 	 * @throws DirectoryException if the number of files and folders which parent directory can hold is reached
@@ -732,21 +732,8 @@ public abstract class Storage {
 			parent.setNumOfFilesLimit(parent.getNumOfFilesLimit() - 1);
 		}
 		
-		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kreira
-		String tmp = name;
-		Integer k = 1;
-		List<FileMetadata> list = storageTreeStracture.get(parent.getRelativePath());
-		for(int i = 0 ; i < list.size() ; i++) {
-			
-			FileMetadata f = list.get(i);
-			
-			if(f.getName().equals(name)) {
-				tmp = name + "(" + (k++) + ")";
-				i = 0;
-			}
-		}
-		
-		name = tmp;
+		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kreira		
+		name = changeNameIfNameExist(parent.getRelativePath(), name);
 			
 		fileMetadata.setName(name);
 		fileMetadata.setSize(0L);
@@ -788,19 +775,17 @@ public abstract class Storage {
 		storageTreeStracture.get(file.getParent().getRelativePath()).remove(file);
 		return true;
 	}
-	// ######################################################################
-	//TREBA DA VRACA NAZIV FAJLA, AKO DODJE DO PROMENE NAZIVA DA SE UPDAJTUJE FAJL !!!!!!!!!!!!!!!!!!!
-	// ######################################################################
+	
 	/**
 	 * Moves FileMetadata to the other destination in the storage tree structure
 	 * @param src is the path to the FileMetada to be moved
 	 * @param newDest is the path to the destination folder
-	 * @return true if FileMetadata is successfully moved, false otherwise
+	 * @return returns the name of the moved FileMetadata
 	 * @throws NotFound if FileMetadata to be moved or destionation folder does not exist
 	 * @throws DirectoryException if the number of files and folders which parent directory can hold is reached 
 	 * @throws OperationNotAllowed if destination folder is a subfolder of the FileMetadata which is intended to be moved
 	 */
-	protected boolean moveFileMetadata(String src, String newDest) throws NotFound, DirectoryException, OperationNotAllowed {
+	protected String moveFileMetadata(String src, String newDest) throws NotFound, DirectoryException, OperationNotAllowed {
 		
 	
 		Map<String, List<FileMetadata>> storageTreeStracture = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure();		
@@ -825,19 +810,8 @@ public abstract class Storage {
 			destFile.setNumOfFilesLimit(destFile.getNumOfFilesLimit() - 1);
 		}
 		
-		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se premesta
-		List<FileMetadata> list = storageTreeStracture.get(destFile.getRelativePath());
-		String tmp = srcFile.getName();
-		int k = 1;
-		for(int i = 0 ; i < list.size() ; i++) {
-			
-			FileMetadata f = list.get(i);
-			
-			if(f.getName().startsWith(srcFile.getName()) && f.getName().endsWith(srcFile.getName())) {
-				srcFile.setName(tmp + (k++));
-				i = 0;
-			}
-		}
+		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se premesta	
+		srcFile.setName(changeNameIfNameExist(destFile.getRelativePath(), srcFile.getName()));
 		
 		if(srcFile.isDirectory()) 
 			pathFix(srcFile.getRelativePath(), destFile.getRelativePath() + File.separator + srcFile.getName(), storageTreeStracture);
@@ -849,7 +823,7 @@ public abstract class Storage {
 		srcFile.setRelativePath(destFile.getRelativePath() + File.separator + srcFile.getName());		
 		srcFile.setTimeModified(new Date());
 
-		return true;
+		return srcFile.getName();
 	}
 	
 	
@@ -870,21 +844,7 @@ public abstract class Storage {
 		if(file == null)
 			throw new NotFound("File path not correct!");
 
-		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se premesta
-		String tmp = newName;
-		Integer k = 1;
-		List<FileMetadata> list = storageTreeStracture.get(file.getParent().getRelativePath());
-		for(int i = 0 ; i < list.size() ; i++) {
-			
-			FileMetadata f = list.get(i);
-			
-			if(f.getName().equals(newName)) {
-				tmp = newName + "(" + (k++) + ")";
-				i = 0;
-			}
-		}
-		
-		newName = tmp;
+		newName = changeNameIfNameExist(file.getParent().getRelativePath(), newName);
 		
 		if(file.isDirectory()) 
 			pathFix(file.getRelativePath(), file.getParent().getRelativePath() + File.separator + newName, storageTreeStracture);	
@@ -915,9 +875,7 @@ public abstract class Storage {
 			f.setRelativePath(newKey + File.separator + f.getName());
 		}
 	}
-	// ######################################################################
-	//TREBA DA VRACA NAZIV FAJLA, AKO DODJE DO PROMENE NAZIVA DA SE UPDAJTUJE FAJL !!!!!!!!!!!!!!!!!!!
-	// ######################################################################
+
 	/**
 	 * Copies FileMetadata
 	 * @param src is the path to FileMetadata to be copied
@@ -959,20 +917,8 @@ public abstract class Storage {
 		}
 		
 		FileMetadata srcFileClone = srcFile.clone();		
-		List<FileMetadata> list = storageTreeStracture.get(destDir.getRelativePath());
-		Integer k = 1;
-		String tmp = srcFileClone.getName();
-		// ako se u direktorijumu vec nalazi fajl sa imenom fajla koji se kopira		
-		for(int i=0 ; i < list.size() ; i++) {
-			
-			FileMetadata f = list.get(i);
-			
-			if(f.getName().startsWith(srcFileClone.getName()) && f.getName().endsWith(srcFileClone.getName())) {
-				srcFileClone.setName(tmp + "(" + (k++) + ")");								
-				i = 0;
-			}
-		}
-		
+		srcFileClone.setName(changeNameIfNameExist(destDir.getRelativePath(), srcFileClone.getName()));
+
 		srcFileClone.setParent(destDir);
 		srcFileClone.setAbsolutePath(destDir.getAbsolutePath() + File.separator + srcFileClone.getName());
 		srcFileClone.setRelativePath(destDir.getRelativePath() + File.separator + srcFileClone.getName());
@@ -1121,6 +1067,25 @@ public abstract class Storage {
 		}	
 		
 		return true;
+	}
+	
+	protected String changeNameIfNameExist(String destination, String name) {
+		
+		List<FileMetadata> directoryContent = StorageManager.getInstance().getStorageInformation().getStorageTreeStructure().get(destination);
+		String ans = name;
+		Integer k = 1;
+		
+		for(int i = 0 ; i < directoryContent.size() ; i++) {
+			
+			FileMetadata f = directoryContent.get(i);
+			
+			if(f.getName().equals(ans)) {
+				ans = name + "(" + (k++) + ")";
+				i = 0;
+			}
+		}
+		
+		return ans;
 	}
 	
 	

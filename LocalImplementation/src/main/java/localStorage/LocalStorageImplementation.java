@@ -267,12 +267,15 @@ public class LocalStorageImplementation extends Storage {
 		if(StorageManager.getInstance().getStorageInformation().isStorageConnected() == false)
 			throw new StorageConnectionException("Storage is currently disconnected! Connection is required.");
 		
+		if(!dest.startsWith(FileUtils.getUserDirectoryPath()))
+			throw new OperationNotAllowed("Destination folder must reside in the user directory!");
+		
 		StorageInformation storageInformation = StorageManager.getInstance().getStorageInformation();
 		Path dataRootAbsolutePath = getAbsolutePath(storageInformation.getDatarootDirectory().getAbsolutePath());
 		Path dataRootRelativePath = getRelativePath(storageInformation.getDatarootDirectory().getRelativePath());
 
 		Path srcPath = getAbsolutePath(src);
-		Path destPath = getAbsolutePath(dest);
+		Path destPath = Paths.get(dest);
 		
 		if(destPath.toString().startsWith(dataRootAbsolutePath.toString()) || destPath.toString().startsWith(dataRootRelativePath.toString()))
 			throw new OperationNotAllowed("Destination folder must be outside of the storage!");
@@ -424,7 +427,12 @@ public class LocalStorageImplementation extends Storage {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		
+			
 	}
+	
 }
+
+
+
+
+
