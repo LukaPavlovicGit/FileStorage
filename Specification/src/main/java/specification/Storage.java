@@ -1012,10 +1012,6 @@ public abstract class Storage {
 			String nextDirName = iterator.next().toString();
 			List<FileMetadata> list = storageTreeStracture.get(parent);
 			
-			if(list==null) {
-				System.out.println("###parent:"+parent);
-				System.out.println("###path:"+path.toString());
-			}
 			for(int i=0 ; i<list.size() ; i++) {				
 				FileMetadata f = list.get(i);					
 				if(f.getName().equals(nextDirName)){
@@ -1024,19 +1020,10 @@ public abstract class Storage {
 					break;
 				}
 				
-				if(i == list.size() - 1) {
-					System.out.println("parent:"+parent);
-					System.out.println("nextDirName not found:"+nextDirName);
+				if(i == list.size() - 1)
 					return null;
-				}
 			}			
 		}	
-		
-		if(ans == null)
-		{
-			System.out.println("parent:"+parent);
-			System.out.println("nextDirName not found: nije usao u while");			
-		}
 		
 		return ans;
 	}
